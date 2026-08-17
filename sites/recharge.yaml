@@ -1,0 +1,46 @@
+# Recharge (SI)
+#
+# SCAFFOLD - NOT YET VERIFIED AGAINST THE LIVE SITE. See the notes in
+# easy-surfshop.yaml; run `probe` then `verify` before trusting the output.
+
+name: recharge
+base_url: https://www.recharge.si
+enabled: true
+strategy: auto
+currency: EUR
+locale: sl_SI
+drop_breadcrumbs: [Domov, Home, Trgovina, Shop]
+
+discovery:
+  use_robots: true
+  sitemaps: []
+  product_url_include:
+    - "/izdelek/"       # WooCommerce Slovenian permalink base
+    - "/product/"
+    - "/products/"
+  product_url_exclude:
+    - "/kosarica"
+    - "/blagajna"
+    - "/moj-racun"
+    - "/cart"
+    - "/checkout"
+    - "\\?add-to-cart="
+  category_urls: []
+  category_link_selector: null
+  product_link_selector: null
+  next_page_selector: null
+  max_pages: 300
+  max_products: null
+
+selectors: {}
+  # availability: "p.stock"        # "Na zalogi" / "Ni na zalogi" are understood
+  # stock_level: "p.stock"
+  # breadcrumbs: "nav.woocommerce-breadcrumb a"
+
+fetch:
+  concurrency: 3
+  delay: 0.75
+  timeout: 30
+  retries: 3
+  respect_robots: true
+  user_agent: "surfscrape/0.1 (+windsurf catalogue; contact: vladimir.smrkolj@gmail.com)"

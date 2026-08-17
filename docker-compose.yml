@@ -1,0 +1,27 @@
+# One container per shop: a shop that hangs, gets rate-limited or breaks its
+# markup cannot take the others down with it, and each gets its own schedule,
+# concurrency and cache. Add a shop = add a YAML + eight lines here.
+
+x-scraper: &scraper
+  build: .
+  restart: "no"
+  volumes:
+    - ./sites:/app/sites:ro
+    - cache:/data/cache
+    - ./output:/data/output
+
+services:
+  easy-surfshop:
+    <<: *scraper
+    container_name: surfscrape-easy-surfshop
+    command: ["scrape", "sites/easy-surfshop.yaml", "--out", "/data/output",
+              "--cache-dir", "/data/cache", "--format", "csv", "xml", "--timestamp"]
+
+  recharge:
+    <<: *scraper
+    container_name: surfscrape-recharge
+    command: ["scrape", "sites/recharge.yaml", "--out", "/data/output",
+              "--cache-dir", "/data/cache", "--format", "csv", "xml", "--timestamp"]
+
+volumes:
+  cache:

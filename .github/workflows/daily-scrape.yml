@@ -1,0 +1,33 @@
+name: daily-scrape
+
+on:
+  schedule:
+    - cron: "0 3 * * *"     # 03:00 UTC daily
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false       # one broken shop must not cancel the other
+      matrix:
+        site: [easy-surfshop, recharge]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Restore HTTP cache
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: httpcache-${{ matrix.site }}-${{ github.run_id }}
+          restore-keys: httpcache-${{ matrix.site }}-
+      - run: python -m surfscrape scrape sites/${{ matrix.site }}.yaml --format csv xml --timestamp
+      - uses: actions/upload-artifact@v4
+        with:
+          name: catalogue-${{ matrix.site }}
+          path: output/
+          retention-days: 30

@@ -1,0 +1,6 @@
+httpx>=0.27
+selectolax>=0.3.21
+pydantic>=2.6
+PyYAML>=6.0
+price-parser>=0.3.4
+tenacity>=8.2

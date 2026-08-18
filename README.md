@@ -112,10 +112,52 @@ Note on `sale_price`: point it at the shop's *struck-through original* price.
 `price` is the higher number, `sale_price` the lower, and the engine swaps them
 if a selector finds them the other way round.
 
+## Running locally (no Docker)
+
+Docker is only for the scheduled daily runs. For testing, work directly:
+
+```bash
+git clone <repo> && cd webshop-scraper
+python -m venv .venv && source .venv/bin/activate
+pip install -e .            # or: pip install -r requirements.txt
+```
+
+Then, from anywhere:
+
+```bash
+surfscrape url https://shop.si/izdelek/jadro-45      # fastest feedback loop
+surfscrape site recharge --limit 5 --format csv      # 5 products, then stop
+surfscrape verify recharge                           # what got filled in?
+```
+
+`--limit N` is the flag to reach for while iterating: it stops after N products
+so you are not hammering a shop to test a selector. `surfscrape url` needs no
+config at all, so it is the quickest way to see whether a page is even
+extractable.
+
+Without `pip install`, `python -m surfscrape ...` works from the repo root just
+as well. Configs are read from `./sites/` if that exists, otherwise from the
+ones in the repo — so you can keep a scratch `sites/` in a test directory
+without touching the real ones.
+
+Two Scrapy tools worth knowing when a selector fights you:
+
+```bash
+scrapy shell "https://shop.si/izdelek/jadro-45"   # REPL: response.css("p.price").get()
+scrapy parse --spider=shop -a site=recharge "https://shop.si/izdelek/jadro-45"
+```
+
+And the test suite needs no network at all — it runs a shop on localhost:
+
+```bash
+pip install -e '.[dev]' && pytest -q
+```
+
 ## One process per shop
 
-Each shop gets its own container, cache and schedule, so a shop that hangs,
-throttles you or changes its markup cannot affect the others.
+For the daily production runs, each shop gets its own container, cache and
+schedule, so a shop that hangs, throttles you or changes its markup cannot
+affect the others.
 
 ```bash
 docker compose build

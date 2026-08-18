@@ -14,8 +14,10 @@ COPY sites/ ./sites/
 COPY scrapy.cfg .
 
 # Scrapy's HTTP cache must survive between daily runs - that is what makes the
-# second run cheap (304s instead of full bodies).
-ENV SCRAPY_SETTINGS_MODULE=surfscrape.settings
+# second run cheap (304s instead of full bodies). SURFSCRAPE_CACHE_DIR is read
+# in surfscrape/settings.py; Scrapy itself does not read settings from the env.
+ENV SCRAPY_SETTINGS_MODULE=surfscrape.settings \
+    SURFSCRAPE_CACHE_DIR=/data/httpcache
 VOLUME ["/data/httpcache", "/data/output"]
 
 ENTRYPOINT ["python", "-m", "surfscrape"]

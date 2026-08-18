@@ -4,6 +4,8 @@ Everything in this file is stock Scrapy. It replaces the hand-written fetcher,
 cache, retry, throttle and robots handling a bespoke engine would need.
 """
 
+import os
+
 BOT_NAME = "surfscrape"
 SPIDER_MODULES = ["surfscrape.spiders"]
 NEWSPIDER_MODULE = "surfscrape.spiders"
@@ -28,7 +30,10 @@ DOWNLOAD_TIMEOUT = 30
 # This is what makes a daily re-run cheap: RFC2616 caching sends
 # If-None-Match / If-Modified-Since and a 304 costs headers only.
 HTTPCACHE_ENABLED = True
-HTTPCACHE_DIR = "httpcache"
+# Scrapy does not read settings from the environment, so a container that wants
+# its cache on a mounted volume has to be told here. Relative paths land in
+# .scrapy/, absolute ones are used as-is.
+HTTPCACHE_DIR = os.environ.get("SURFSCRAPE_CACHE_DIR", "httpcache")
 HTTPCACHE_POLICY = "scrapy.extensions.httpcache.RFC2616Policy"
 HTTPCACHE_STORAGE = "scrapy.extensions.httpcache.FilesystemCacheStorage"
 HTTPCACHE_ALWAYS_STORE = True

@@ -171,8 +171,29 @@ Scheduling — pick one:
 - **GitHub Actions:** `.github/workflows/daily-scrape.yml`, one job per shop in
   a matrix with `fail-fast: false`.
 
-Keep the cache volume between runs. That is what makes the daily re-run cheap:
-unchanged pages come back `304` with no body and no parsing.
+What persists between runs:
+
+| Path | Where it lives | Why |
+|---|---|---|
+| `./sites` | bind mount on the host | your shop configs, writable so `init` works inside the container |
+| `./output` | bind mount on the host | the CSV/XML files |
+| `cache-<shop>` | named volume, one per shop | Scrapy's HTTP cache |
+
+The cache volume is the one that matters for cost: on the next day's run,
+unchanged pages come back `304` with no body and no parsing. Verified by a
+test — a second run revalidates every page and downloads none of them.
+
+Scrapy does not read settings from environment variables, so the cache location
+is passed as `SURFSCRAPE_CACHE_DIR` and read explicitly in
+`surfscrape/settings.py`. Setting `HTTPCACHE_DIR` in the environment does
+nothing.
+
+You can run a shop by hand, with the same persistence:
+
+```bash
+docker compose run --rm recharge init https://www.recharge.si --write
+docker compose run --rm recharge verify recharge
+```
 
 ## Layout
 

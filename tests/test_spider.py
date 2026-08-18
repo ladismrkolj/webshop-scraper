@@ -135,3 +135,36 @@ def test_init_generates_a_working_config(shop, tmp_path):
     # ...and the generated selectors actually produce the discount.
     sail = next(r for r in rows if r["sku"] == "S45")
     assert sail["price"] == "899.00" and sail["sale_price"] == "799.00"
+
+
+def test_cache_dir_is_configurable_and_reused(shop, tmp_path):
+    """The daily-run saving depends on this: the HTTP cache must land where we
+    point it (a mounted volume, in Docker) and be reused by the next run.
+
+    Scrapy does not read settings from the environment, so surfscrape/settings.py
+    reads SURFSCRAPE_CACHE_DIR explicitly - this test is what catches that
+    plumbing going missing.
+    """
+    write_config(tmp_path, shop)
+    cache = tmp_path / "persistent-cache"
+    env = {**os.environ, "PYTHONPATH": str(ROOT), "SURFSCRAPE_CACHE_DIR": str(cache)}
+
+    def run_once() -> str:
+        r = subprocess.run(
+            [sys.executable, "-m", "surfscrape", "--log-level", "INFO",
+             "site", "testshop", "--format", "csv", "--out", str(tmp_path / "o")],
+            cwd=tmp_path, capture_output=True, text=True, timeout=180, env=env,
+        )
+        assert r.returncode == 0, r.stderr[-2000:]
+        return r.stderr
+
+    run_once()
+    assert cache.is_dir(), "cache was not written to SURFSCRAPE_CACHE_DIR"
+    assert any(cache.rglob("response_body")), "nothing stored in the cache"
+
+    stats = run_once()
+    # Second run: every page is revalidated against the stored copy (conditional
+    # GET -> 304 -> body from cache) and nothing is downloaded fresh. A shop
+    # sending real max-age headers would give httpcache/hit and no request at all.
+    assert "httpcache/revalidate" in stats
+    assert "httpcache/miss" not in stats, "second run refetched instead of revalidating"

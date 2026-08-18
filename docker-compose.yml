@@ -1,23 +1,26 @@
 # One container per shop: separate process, separate cache, separate schedule.
 # A shop that hangs, throttles you or breaks its markup cannot affect the others.
 # Adding a shop = one YAML file + one block here.
+#
+# What persists between runs:
+#   ./sites    - your shop configs, on the host (writable, so `init` works)
+#   ./output   - the CSV/XML files, on the host
+#   cache-*    - a named volume per shop, holding Scrapy's HTTP cache; this is
+#                what lets the next day's run revalidate with 304s instead of
+#                downloading every page again
 
 x-shop: &shop
   build: .
   restart: "no"
   environment:
-    SCRAPY_SETTINGS_MODULE: surfscrape.settings
-    HTTPCACHE_DIR: /data/httpcache
-  volumes:
-    - ./sites:/app/sites:ro
-    - ./output:/data/output
+    SURFSCRAPE_CACHE_DIR: /data/httpcache
 
 services:
   easy-surfshop:
     <<: *shop
     container_name: surfscrape-easy-surfshop
     volumes:
-      - ./sites:/app/sites:ro
+      - ./sites:/app/sites
       - ./output:/data/output
       - cache-easy-surfshop:/data/httpcache
     command: ["site", "easy-surfshop", "--format", "csv", "xml",
@@ -27,7 +30,7 @@ services:
     <<: *shop
     container_name: surfscrape-recharge
     volumes:
-      - ./sites:/app/sites:ro
+      - ./sites:/app/sites
       - ./output:/data/output
       - cache-recharge:/data/httpcache
     command: ["site", "recharge", "--format", "csv", "xml",

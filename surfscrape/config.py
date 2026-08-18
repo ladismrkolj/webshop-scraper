@@ -1,21 +1,31 @@
-"""Per-shop configuration. Adding a shop = adding one YAML file in sites/."""
+"""Per-shop configuration: one YAML file per shop, all fields optional but two.
+
+Everything here is about *this shop's HTML*. Crawl politeness, concurrency,
+retries and caching are Scrapy settings, not ours - see surfscrape/settings.py.
+"""
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
 
 import yaml
 from pydantic import BaseModel, Field
 
-Strategy = Literal["auto", "shopify", "woocommerce", "generic"]
+PACKAGE_SITES_DIR = Path(__file__).resolve().parent.parent / "sites"
+
+
+def sites_dirs() -> list[Path]:
+    """Where to look for shop configs: the working directory first, so a
+    checkout, a container mount and an ad-hoc directory all just work."""
+    cwd = Path.cwd() / "sites"
+    return [cwd] if cwd.resolve() == PACKAGE_SITES_DIR.resolve() else [cwd, PACKAGE_SITES_DIR]
 
 
 class Selectors(BaseModel):
-    """CSS selectors for a product page. All optional: only fill what JSON-LD misses.
+    """CSS selectors for a product page. Only fill in what the automatic
+    extractors miss - anything left out keeps its schema.org value.
 
-    Each value may be a single selector or a list tried in order. Suffix a
-    selector with '::attr(name)' to read an attribute instead of text.
+    Syntax: plain CSS, '::attr(name)' for an attribute, a list to try in order.
     """
 
     title: str | list[str] | None = None
@@ -33,55 +43,68 @@ class Selectors(BaseModel):
     variant_price: str | list[str] | None = None
     variant_sku: str | list[str] | None = None
 
-
-class Discovery(BaseModel):
-    """How to find every product URL."""
-
-    use_robots: bool = True
-    sitemaps: list[str] = Field(default_factory=list)
-    # Regexes: a URL is a product page if it matches any include and no exclude.
-    product_url_include: list[str] = Field(default_factory=list)
-    product_url_exclude: list[str] = Field(default_factory=list)
-    # Fallback / supplement: crawl these listing pages and follow pagination.
-    category_urls: list[str] = Field(default_factory=list)
-    category_link_selector: str | None = None
-    product_link_selector: str | None = None
-    next_page_selector: str | None = None
-    max_pages: int = 200
-    max_products: int | None = None
-
-
-class Fetch(BaseModel):
-    concurrency: int = 4
-    delay: float = 0.5  # seconds between requests to this host, per worker
-    timeout: float = 30.0
-    retries: int = 3
-    user_agent: str = (
-        "surfscrape/0.1 (+windsurf catalogue aggregator; contact: set_in_config)"
-    )
-    headers: dict[str, str] = Field(default_factory=dict)
-    respect_robots: bool = True
-    verify_tls: bool = True
+    def any_set(self) -> bool:
+        return bool(self.model_dump(exclude_none=True))
 
 
 class SiteConfig(BaseModel):
     name: str
     base_url: str
     enabled: bool = True
-    strategy: Strategy = "auto"
+    platform: str = "auto"          # auto | shopify | woocommerce | html
     currency: str | None = None
-    locale: str | None = None
-    # Strip these leading crumbs from category paths ("Home", "Shop"...)
     drop_breadcrumbs: list[str] = Field(default_factory=lambda: ["Home", "Domov", "Shop"])
-    discovery: Discovery = Field(default_factory=Discovery)
+
+    # Which URLs are product pages / category pages. Regex, matched against
+    # the full URL. Empty product_url_include means "anything on this host".
+    product_url_include: list[str] = Field(default_factory=list)
+    product_url_exclude: list[str] = Field(
+        default_factory=lambda: ["/cart", "/checkout", "/kosarica", "/blagajna",
+                                 r"\?add-to-cart=", "/wp-admin", "/my-account"]
+    )
+    sitemaps: list[str] = Field(default_factory=list)   # empty -> robots.txt
+    category_urls: list[str] = Field(default_factory=list)
+    next_page_selector: str | None = None   # only needed if pagination is JS-ish
+
+    # Politeness override for this shop only (Scrapy settings names).
+    settings: dict = Field(default_factory=dict)
+
     selectors: Selectors = Field(default_factory=Selectors)
-    fetch: Fetch = Field(default_factory=Fetch)
 
     @classmethod
-    def load(cls, path: str | Path) -> SiteConfig:
-        raw = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
-        return cls.model_validate(raw)
+    def load(cls, target: str | Path) -> SiteConfig:
+        """Accepts a path, or a bare shop name resolved against sites/."""
+        path = Path(target)
+        if not path.exists():
+            candidates = [d / f"{target}.{ext}" for d in sites_dirs() for ext in ("yaml", "yml")]
+            for cand in candidates:
+                if cand.exists():
+                    path = cand
+                    break
+            else:
+                raise FileNotFoundError(
+                    f"no site config for {target!r}; looked in "
+                    + ", ".join(str(d) for d in sites_dirs())
+                )
+        return cls.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
+
+    @classmethod
+    def load_all(cls, directory: str | Path | None = None) -> list[SiteConfig]:
+        dirs = [Path(directory)] if directory else sites_dirs()
+        for d in dirs:
+            paths = sorted(d.glob("*.y*ml"))
+            if paths:
+                return [cls.load(p) for p in paths]
+        return []
+
+    def dump_yaml(self) -> str:
+        data = self.model_dump(exclude_defaults=True, exclude_none=True)
+        return yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
 
     @staticmethod
-    def discover(directory: str | Path = "sites") -> list[Path]:
-        return sorted(Path(directory).glob("*.y*ml"))
+    def for_url(url: str, name: str = "adhoc") -> SiteConfig:
+        """A throwaway config, for `surfscrape url ...` against an unknown shop."""
+        from urllib.parse import urlparse
+
+        p = urlparse(url)
+        return SiteConfig(name=name, base_url=f"{p.scheme}://{p.netloc}")

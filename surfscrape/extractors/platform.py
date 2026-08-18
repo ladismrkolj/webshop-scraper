@@ -6,41 +6,24 @@ catalogue is a handful of requests instead of thousands.
 
   Shopify:     /products.json?limit=250&page=N       (open by default)
   WooCommerce: /wp-json/wc/store/v1/products          (Store API, public, no key)
+
+These are pure functions: JSON payload in, Products out. The spider owns the
+requesting and the paging.
 """
 
 from __future__ import annotations
 
-import logging
 from decimal import Decimal
 from typing import Any
 from urllib.parse import urljoin
 
-from ..http import Fetcher
 from ..models import Product, Variant
 from .common import cents_to_decimal, clean_text, norm_availability, to_decimal
 
-log = logging.getLogger(__name__)
-
-
-async def detect(fetcher: Fetcher, base_url: str) -> str:
-    """Return 'shopify' | 'woocommerce' | 'generic'."""
-    data = await fetcher.get_json(urljoin(base_url, "/products.json?limit=1"))
-    if isinstance(data, dict) and "products" in data:
-        return "shopify"
-    data = await fetcher.get_json(urljoin(base_url, "/wp-json/wc/store/v1/products?per_page=1"))
-    if isinstance(data, list) and data and "id" in data[0]:
-        return "woocommerce"
-    resp = await fetcher.get(base_url)
-    body = resp.text.lower()
-    if "cdn.shopify.com" in body or "shopify" in body:
-        return "shopify"
-    if "wp-content/plugins/woocommerce" in body or "woocommerce" in body:
-        return "woocommerce"
-    return "generic"
 
 
 # ---------------------------------------------------------------- Shopify
-def _shopify_product(node: dict[str, Any], shop: str, base_url: str) -> Product:
+def shopify_product(node: dict[str, Any], shop: str, base_url: str) -> Product:
     handle = node.get("handle", "")
     images = [i.get("src") for i in node.get("images", []) if i.get("src")]
     variants: list[Variant] = []
@@ -94,26 +77,9 @@ def _shopify_product(node: dict[str, Any], shop: str, base_url: str) -> Product:
     )
 
 
-async def shopify_catalogue(fetcher: Fetcher, base_url: str, shop: str,
-                            max_products: int | None = None) -> list[Product]:
-    out: list[Product] = []
-    page = 1
-    while page <= 200:
-        url = urljoin(base_url, f"/products.json?limit=250&page={page}")
-        data = await fetcher.get_json(url, use_cache=False)
-        items = (data or {}).get("products") or []
-        if not items:
-            break
-        out.extend(_shopify_product(p, shop, base_url) for p in items)
-        log.info("[%s] shopify page %d -> %d products (total %d)", shop, page, len(items), len(out))
-        if max_products and len(out) >= max_products:
-            break
-        page += 1
-    return out[:max_products] if max_products else out
-
 
 # ------------------------------------------------------------ WooCommerce
-def _woo_product(node: dict[str, Any], shop: str) -> Product:
+def woo_product(node: dict[str, Any], shop: str) -> Product:
     prices = node.get("prices") or {}
     minor = int(prices.get("currency_minor_unit", 2) or 2)
 
@@ -168,18 +134,25 @@ def _woo_product(node: dict[str, Any], shop: str) -> Product:
     )
 
 
-async def woocommerce_catalogue(fetcher: Fetcher, base_url: str, shop: str,
-                                max_products: int | None = None) -> list[Product]:
-    out: list[Product] = []
-    page = 1
-    while page <= 500:
-        url = urljoin(base_url, f"/wp-json/wc/store/v1/products?per_page=100&page={page}")
-        data = await fetcher.get_json(url, use_cache=False)
-        if not isinstance(data, list) or not data:
-            break
-        out.extend(_woo_product(p, shop) for p in data)
-        log.info("[%s] woo page %d -> %d products (total %d)", shop, page, len(data), len(out))
-        if max_products and len(out) >= max_products:
-            break
-        page += 1
-    return out[:max_products] if max_products else out
+SHOPIFY_FEED = "/products.json?limit=250&page={page}"
+WOO_FEED = "/wp-json/wc/store/v1/products?per_page=100&page={page}"
+
+
+def detect_from_html(body: str) -> str:
+    """Best guess at a shop's platform from its homepage HTML."""
+    text = body.lower()
+    if "cdn.shopify.com" in text or "shopify.theme" in text or "/cdn/shop/" in text:
+        return "shopify"
+    if "wp-content/plugins/woocommerce" in text or "woocommerce-page" in text:
+        return "woocommerce"
+    if "prestashop" in text:
+        return "prestashop"
+    return "html"
+
+
+def parse_shopify_feed(payload, shop: str, base_url: str) -> list[Product]:
+    return [shopify_product(p, shop, base_url) for p in (payload or {}).get("products", [])]
+
+
+def parse_woo_feed(payload, shop: str) -> list[Product]:
+    return [woo_product(p, shop) for p in (payload or []) if isinstance(p, dict)]

@@ -1,154 +1,185 @@
 # surfscrape
 
-Turns windsurf webshops into one normalised product table (CSV / XML / JSONL).
-Built to run once a day, cheaply, with a new shop costing you one YAML file.
+A product-extraction layer on top of [Scrapy](https://scrapy.org), for windsurf
+webshops. Scrapy does the crawling; this repo does the part Scrapy has no
+opinion about — turning any shop's product page into the same row.
 
-Per product it captures: title, brand, SKU, price, sale price + discount %,
-description, all image URLs, category tree, variations, stock status and stock
-level where the shop exposes it.
-
-## Quick start
+Per product: title, brand, SKU, price, sale price + discount %, description,
+all image URLs, category tree, variations, stock status and stock level.
 
 ```bash
 pip install -r requirements.txt
 
-python -m surfscrape probe https://www.recharge.si          # what platform is it?
-python -m surfscrape verify sites/recharge.yaml --limit 5   # what do we extract?
-python -m surfscrape scrape sites/ --format csv xml --timestamp
+surfscrape url      https://shop.si/izdelek/jadro-45     # one product, prints JSON
+surfscrape category https://shop.si/kategorija/jadra     # one category + pagination
+surfscrape site     recharge                             # whole shop -> CSV
+surfscrape site     all --format csv xml --timestamp     # every shop in sites/
+
+surfscrape init     https://shop.si --write              # generate a config
+surfscrape verify   recharge                             # what did we actually get?
 ```
 
-Output lands in `output/<shop>-<date>.csv` plus `output/run-stats.json`.
+Everything the CLI does, plain Scrapy does too — the CLI only saves you the
+settings boilerplate:
 
-## How it gets the data
+```bash
+scrapy crawl shop -a site=recharge -O out.csv
+scrapy crawl shop -a url=https://shop.si/izdelek/jadro-45
+```
 
-Three strategies, cheapest first — `strategy: auto` picks one per shop:
+## Why Scrapy
 
-| Strategy | When | Cost for a 2000-product catalogue |
-|---|---|---|
-| `shopify` | `/products.json` responds | ~8 requests |
-| `woocommerce` | Store API (`/wp-json/wc/store/v1/products`) responds | ~20 requests |
-| `generic` | everything else | 1 request per product |
+Because it deletes most of the code. These are all stock settings in
+`surfscrape/settings.py`, not things we maintain:
 
-The generic path finds products via `robots.txt` → `sitemap.xml` (recursing
-into sitemap indexes and `.gz`), falling back to crawling category pages with
-pagination. Extraction is layered: **schema.org JSON-LD → OpenGraph → your CSS
-selectors**, merged so the CSS layer only fills what the structured data
-missed. Most shops emit a schema.org `Product` for Google, so a new shop often
-needs zero selectors.
+| Need | Handled by |
+|---|---|
+| robots.txt, `Disallow`, `Crawl-delay` | `ROBOTSTXT_OBEY` |
+| conditional GET, 304s on daily re-runs | `HTTPCACHE_POLICY = RFC2616Policy` |
+| retries with backoff, timeouts | `RETRY_*`, `DOWNLOAD_TIMEOUT` |
+| adaptive politeness | `AUTOTHROTTLE_ENABLED` |
+| sitemap discovery, indexes, `.gz` | `SitemapSpider` |
+| duplicate URL filtering | built-in dupefilter |
+| CSV / XML / JSON / JSONL output | `FEEDS` |
+
+What is left — and all this project really is — is `surfscrape/extractors/`:
+the stack that reads a product out of a page.
+
+## The extraction layer
+
+For each product page, in order, each layer filling only what the last one left
+blank:
+
+1. **schema.org JSON-LD** — most shops emit a `Product` node for Google, so
+   this alone usually covers a new shop.
+2. **OpenGraph meta tags** — fallback for the rest.
+3. **your CSS selectors** — `sites/<shop>.yaml`, for whatever is still missing.
+
+Shops on Shopify or WooCommerce skip HTML entirely: `/products.json` and the
+WooCommerce Store API return fully-structured products with real variants and
+inventory, so a 2000-product catalogue is ~8 requests instead of 2000. The
+spider detects this from the homepage and switches by itself
+(`platform: auto`).
 
 ## Adding a shop
 
-1. `python -m surfscrape probe https://newshop.com`
-2. Copy `sites/recharge.yaml`, set `name`, `base_url`, and the URL patterns
-   that identify a product page.
-3. `python -m surfscrape verify sites/newshop.yaml --limit 5`
-
-```
-[newshop] strategy=generic  sample=5  sources={'jsonld': 5}
-  ok    title          5/5
-  MISS  stock_level    0/5
-  part  brand          3/5
+```bash
+surfscrape init https://newshop.com --write
 ```
 
-4. Add a selector for each `MISS`, re-run. Selector syntax is plain CSS, with
-   `::attr(name)` for attributes and a list to try alternatives in order:
+It fetches the homepage, detects the platform, reads robots.txt and the
+sitemap, infers the product-URL pattern from the URLs it finds, then fetches a
+sample product page and checks what the automatic extractors got. For each
+field they missed it tries a library of known theme selectors and keeps the
+ones that produce a plausible value:
+
+```
+# platform: html
+# sitemaps: 1 advertised
+# sitemap URLs sampled: 400
+# product URL pattern: ['/izdelek/']
+# automatic extraction (jsonld) covered: availability, brand, breadcrumbs,
+#   description, images, price, sku, title
+# selectors found: {'sale_price': 'p.price del .amount', 'stock_level': 'p.stock'}
+wrote sites/newshop.yaml
+```
+
+Then check it:
+
+```
+$ surfscrape verify newshop --limit 5
+[newshop] 5 rows  sources={'jsonld'}
+  ok    title           5/5
+  part  sale_price      1/5      <- only one product is discounted, fine
+  MISS  brand           0/5      <- add a selector
+```
+
+Add a selector per `MISS` and re-run. A whole shop config is often this small:
 
 ```yaml
+name: newshop
+base_url: https://newshop.com
+platform: auto
+currency: EUR
+product_url_include: ["/izdelek/"]
 selectors:
-  stock_level: "p.stock"
-  brand: ["*[itemprop=brand]", "a.brand-link"]
-  images: "figure img::attr(data-large_image)"
+  brand: ".product-brand"           # plain CSS
+  images: ".gallery img::attr(src)" # ::attr() for attributes
+  sku: ["span.sku", ".product-sku"] # a list tries each in order
 ```
 
-That is the whole extension surface — no Python needed for a new shop.
-
-## Daily runs are cheap
-
-Every response is cached in SQLite with its `ETag` / `Last-Modified`, and
-re-runs send conditional requests. A page that has not changed returns `304`
-with no body: no bandwidth, no parsing, and much lighter load on the shop.
-Keep `.cache/` (or the Docker `cache` volume) between runs — that is where the
-saving comes from.
-
-The scraper reads `robots.txt`, obeys `Disallow`, and honours `Crawl-delay`
-when it is longer than your configured delay. Concurrency and delay are
-per-shop settings; keep them gentle even though the shops said yes.
+Note on `sale_price`: point it at the shop's *struck-through original* price.
+`price` is the higher number, `sale_price` the lower, and the engine swaps them
+if a selector finds them the other way round.
 
 ## One process per shop
 
-Yes — that is how it is set up, and it is the right default. Each shop gets its
-own container, cache, concurrency and schedule, so a shop that hangs, throttles
-you or changes its markup cannot take the others down.
+Each shop gets its own container, cache and schedule, so a shop that hangs,
+throttles you or changes its markup cannot affect the others.
 
 ```bash
 docker compose build
-docker compose run --rm recharge          # one shop
-docker compose up                         # all shops, in parallel
+docker compose run --rm recharge     # one shop
+docker compose up                    # all shops, in parallel
 ```
 
-For scheduling, pick one:
+Scheduling — pick one:
 
-- **cron on the host:** `0 3 * * * cd /srv/surfscrape && docker compose up`
-- **GitHub Actions:** `.github/workflows/daily-scrape.yml` is included and runs
-  one job per shop in a matrix with `fail-fast: false`.
+- **cron:** `0 3 * * * cd /srv/surfscrape && docker compose up`
+- **GitHub Actions:** `.github/workflows/daily-scrape.yml`, one job per shop in
+  a matrix with `fail-fast: false`.
 
-`scrape sites/` in a single process also works and is fine for two shops; it
-runs them sequentially and keeps going if one fails.
+Keep the cache volume between runs. That is what makes the daily re-run cheap:
+unchanged pages come back `304` with no body and no parsing.
 
-## Libraries used, and why
+## Layout
 
-Everything here is off-the-shelf where a good library exists:
+```
+surfscrape/
+  extractors/       the actual work: jsonld.py, css.py, platform.py, common.py
+  spiders/shop.py   one spider for every shop (~180 lines)
+  generate.py       `init`: writes a config by inspecting a shop
+  config.py         the YAML schema
+  models.py         Product/Variant, and the flattening into export rows
+  settings.py       Scrapy settings - the crawl behaviour lives here
+  cli.py            argparse over the above
+sites/*.yaml        one file per shop
+```
 
-- **httpx** — async HTTP/1.1+2 client; the concurrency engine.
-- **selectolax** — CSS selection over a C (Lexbor) parser. Typically 5–30×
-  faster than BeautifulSoup+lxml on real pages, which matters at thousands of
-  product pages a day.
-- **pydantic v2** — schema and validation for both the product model and the
-  site YAML, so a malformed config fails loudly at load.
-- **price-parser** — handles `1.299,00 €` vs `€1,299.00` vs `129,00 EUR`.
-  Do not hand-roll this.
-- **tenacity** — retry with exponential backoff on 429/5xx.
-- **PyYAML** — site configs.
+## Prior art
 
-Deliberately *not* used:
+The layered "default extractor, overridden per site by URL pattern" shape is
+the same idea as Zyte's [scrapy-poet / web-poet page
+objects](https://scrapy-poet.readthedocs.io/en/stable/rules-from-web-poet.html),
+where a `RulesRegistry` swaps in a per-site page object via `@handle_urls`.
+That is the right thing to grow into if a shop ever needs real per-site *code*
+rather than selectors — the extractor stack is already the seam for it. It is
+deliberately not used yet: it brings dependency injection and providers, and so
+far a YAML file per shop does the job.
 
-- **Scrapy** — the mature, batteries-included option, and a legitimate choice.
-  It brings its own project layout, spider classes and twisted-style plumbing;
-  for a config-driven engine where adding a shop should mean editing YAML, not
-  writing a spider class, ~800 lines of httpx is simpler to own and extend.
-  If you later need distributed crawling or a large middleware ecosystem,
-  Scrapy is the migration target.
-- **extruct** — would replace `extract/jsonld.py`, but its dependency chain
-  fails to build on current setuptools and JSON-LD is one selector plus
-  `json.loads`.
-- **Playwright** — not needed unless a shop renders prices in JavaScript.
-  Install with `pip install -e '.[browser]'` and add a rendering fetcher only
-  for that shop if `verify` shows prices missing on a page where the browser
-  shows them. Every product page you render costs ~50× a plain fetch, so treat
-  it as a per-shop last resort.
+[`zyte-spider-templates`](https://zyte-spider-templates.readthedocs.io/en/latest/templates/e-commerce.html)
+solves exactly this problem (`scrapy crawl ecommerce -a url=...`) but its
+extraction runs through the paid Zyte API. The CLI here borrows its shape.
 
-## Status / what still needs you
+## Status
 
-The engine and its extractors are tested offline (`pytest`, 10 tests, including
-a full discovery→CSV run against a local test shop and a 304-revalidation run).
+13 tests, all offline. Extractor unit tests plus end-to-end runs of the real
+Scrapy stack against a local test shop: single URL, category with pagination,
+sitemap-driven full run to CSV, `--limit`, robots.txt `Disallow`, and
+`init`-generates-a-config-that-then-works.
 
-**The two site configs in `sites/` are scaffolds, not verified.** The sandbox
-this was written in cannot reach `recharge.si` or `easy-surfshop.com` — the
-egress policy blocks both — so their URL patterns are the conventional defaults
-for their likely platforms rather than observed facts. Run `probe` then
-`verify` against each before trusting the output; expect to adjust
-`product_url_include` and possibly add a few selectors. That is a few minutes
-per shop, and `verify` tells you exactly what is missing.
+```bash
+pytest -q
+```
 
-## Output columns
+**The two configs in `sites/` are unverified scaffolds.** The sandbox this was
+written in cannot reach `recharge.si` or `easy-surfshop.com` (egress policy), so
+their patterns are conventional defaults, not observed facts. Replace each with
+a generated one — `surfscrape init https://www.recharge.si --write` — and check
+it with `verify`. That is the ten-second version of what would otherwise be an
+afternoon.
 
-One row per variant (or one per product if it has none):
-
-`shop, product_id, variant_id, sku, title, variant_title, brand, category_path,
-category_1..3, url, price, sale_price, effective_price, discount_pct, currency,
-availability, stock_level, options, image_main, images, description, source,
-scraped_at`
-
-`availability` is normalised to `in_stock | out_of_stock | preorder | backorder`
-across all shops and languages. The XML writer emits an RSS 2.0 feed in the
-Google Merchant namespace, which most downstream tools already read.
+For a shop that renders prices in JavaScript, add
+[scrapy-playwright](https://github.com/scrapy-plugins/scrapy-playwright)
+(`pip install -e '.[browser]'`) for that shop only; it costs roughly 50× a
+plain fetch per page.

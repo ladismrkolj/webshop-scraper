@@ -1,62 +1,23 @@
 # Easy Surf Shop
 #
-# SCAFFOLD - NOT YET VERIFIED AGAINST THE LIVE SITE.
-# The sandbox this was written in cannot reach the domain (egress policy), so
-# the URL patterns and selectors below are the usual defaults, not observed
-# facts. Before the first real run:
+# UNVERIFIED SCAFFOLD - see the note in recharge.yaml. Generate a real one:
 #
-#   surfscrape probe https://www.easy-surfshop.com     # platform + sitemaps
-#   surfscrape verify sites/easy-surfshop.yaml --limit 5
+#   surfscrape init https://www.easy-surfshop.com --write
+#   surfscrape verify easy-surfshop
 #
-# and fix whatever `verify` reports as MISS. With `strategy: auto` there is a
-# good chance you need to change nothing at all.
-
 name: easy-surfshop
 base_url: https://www.easy-surfshop.com
-enabled: true
-strategy: auto          # auto | shopify | woocommerce | generic
+platform: auto
 currency: EUR
 drop_breadcrumbs: [Home, Strona główna, Shop, Sklep]
 
-discovery:
-  use_robots: true
-  sitemaps: []          # empty -> robots.txt, then /sitemap.xml
-  product_url_include:
-    - "/product/"
-    - "/products/"
-    - "/p/"
-  product_url_exclude:
-    - "/cart"
-    - "/checkout"
-    - "/account"
-    - "\\?add-to-cart="
-    - "/page/\\d+"
-  # Only used if the sitemap comes up empty:
-  category_urls: []
-  category_link_selector: null
-  product_link_selector: null
-  next_page_selector: null
-  max_pages: 300
-  max_products: null
+product_url_include:
+  - "/product/"
+  - "/products/"
+  - "/p/"
+product_url_exclude:
+  - "/cart"
+  - "/checkout"
+  - "\\?add-to-cart="
 
-# Leave a field out and the schema.org value is kept. Only add a selector for
-# something `verify` reports as missing.
 selectors: {}
-  # title: "h1.product_title"
-  # price: ["p.price del .amount", "p.price .amount"]
-  # sale_price: "p.price ins .amount"
-  # sku: "span.sku"
-  # brand: "*[itemprop=brand]"
-  # description: "div.woocommerce-product-details__short-description"
-  # images: "figure.woocommerce-product-gallery__wrapper img::attr(src)"
-  # availability: "p.stock"
-  # stock_level: "p.stock"
-  # breadcrumbs: "nav.woocommerce-breadcrumb a"
-
-fetch:
-  concurrency: 4
-  delay: 0.5            # raised automatically if robots.txt asks for more
-  timeout: 30
-  retries: 3
-  respect_robots: true
-  user_agent: "surfscrape/0.1 (+windsurf catalogue; contact: vladimir.smrkolj@gmail.com)"

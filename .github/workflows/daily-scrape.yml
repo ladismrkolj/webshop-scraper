@@ -22,10 +22,10 @@ jobs:
       - name: Restore HTTP cache
         uses: actions/cache@v4
         with:
-          path: .cache
-          key: httpcache-${{ matrix.site }}-${{ github.run_id }}
-          restore-keys: httpcache-${{ matrix.site }}-
-      - run: python -m surfscrape scrape sites/${{ matrix.site }}.yaml --format csv xml --timestamp
+          path: httpcache
+          key: scrapycache-${{ matrix.site }}-${{ github.run_id }}
+          restore-keys: scrapycache-${{ matrix.site }}-
+      - run: python -m surfscrape site ${{ matrix.site }} --format csv xml --timestamp
       - uses: actions/upload-artifact@v4
         with:
           name: catalogue-${{ matrix.site }}

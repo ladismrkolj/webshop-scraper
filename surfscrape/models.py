@@ -112,3 +112,61 @@ class Product(BaseModel):
     def is_complete(self) -> bool:
         """Minimum bar for a usable row."""
         return bool(self.title and (self.price is not None or self.variants))
+
+    def rows(self) -> list[dict]:
+        """Flatten to one dict per variant (or one for the product if it has none).
+
+        This is what the spider yields, so Scrapy's own CSV / XML / JSON feed
+        exporters can write it with no exporter code of ours.
+        """
+        base = {
+            "shop": self.shop,
+            "product_id": self.product_id or "",
+            "sku": self.sku or "",
+            "title": self.title or "",
+            "brand": self.brand or "",
+            "category_path": self.category_path,
+            "url": self.url,
+            "currency": self.currency or "",
+            "image_main": self.images[0] if self.images else "",
+            "images": " | ".join(self.images),
+            "description": self.description or "",
+            "source": self.source or "",
+            "scraped_at": self.scraped_at.isoformat(),
+        }
+        if not self.variants:
+            eff = self.sale_price if self.sale_price is not None else self.price
+            return [{
+                **base, "variant_id": "", "variant_title": "", "options": "",
+                "price": self.price, "sale_price": self.sale_price,
+                "effective_price": eff, "discount_pct": self.discount_pct,
+                "availability": self.availability or "",
+                "stock_level": self.stock_level,
+            }]
+        out = []
+        for idx, v in enumerate(self.variants):
+            eff = v.effective_price if v.effective_price is not None else (
+                self.sale_price if self.sale_price is not None else self.price)
+            out.append({
+                **base,
+                "variant_id": v.sku or f"{self.product_id or 'p'}-{idx}",
+                "sku": v.sku or self.sku or "",
+                "variant_title": v.title or "",
+                "options": "; ".join(f"{k}={val}" for k, val in v.options.items()),
+                "price": v.price if v.price is not None else self.price,
+                "sale_price": v.sale_price if v.sale_price is not None else self.sale_price,
+                "effective_price": eff,
+                "discount_pct": v.discount_pct if v.discount_pct is not None else self.discount_pct,
+                "availability": v.availability or self.availability or "",
+                "stock_level": v.stock_level if v.stock_level is not None else self.stock_level,
+                "image_main": v.image or base["image_main"],
+            })
+        return out
+
+
+ROW_FIELDS = [
+    "shop", "product_id", "variant_id", "sku", "title", "variant_title", "brand",
+    "category_path", "url", "price", "sale_price", "effective_price", "discount_pct",
+    "currency", "availability", "stock_level", "options", "image_main", "images",
+    "description", "source", "scraped_at",
+]

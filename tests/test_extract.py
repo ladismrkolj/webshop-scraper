@@ -3,11 +3,10 @@
 from decimal import Decimal
 
 from surfscrape.config import Selectors
-from surfscrape.extract import css as css_extract
-from surfscrape.extract import jsonld as jsonld_extract
-from surfscrape.extract.common import norm_availability, to_decimal
-from surfscrape.extract.platform import _shopify_product, _woo_product
-from surfscrape.export import _rows, to_csv, to_xml
+from surfscrape.extractors import css as css_extract
+from surfscrape.extractors import jsonld as jsonld_extract
+from surfscrape.extractors.common import norm_availability, to_decimal
+from surfscrape.extractors.platform import shopify_product, woo_product
 
 JSONLD_HTML = """
 <html><head>
@@ -87,7 +86,7 @@ def test_shopify_variants_and_discount():
              "compare_at_price": None, "available": False, "inventory_quantity": 0},
         ],
     }
-    p = _shopify_product(node, "t", "https://shop.test")
+    p = shopify_product(node, "t", "https://shop.test")
     assert p.url == "https://shop.test/products/north-sail"
     assert p.description == "Nice sail"
     assert len(p.variants) == 2
@@ -111,7 +110,7 @@ def test_woocommerce_minor_units():
                    "currency_code": "EUR", "currency_minor_unit": 2},
         "variations": [],
     }
-    p = _woo_product(node, "t")
+    p = woo_product(node, "t")
     assert p.price == Decimal("150.00")
     assert p.sale_price == Decimal("120.00")
     assert p.discount_pct == 20.0
@@ -129,19 +128,14 @@ def test_availability_and_price_parsing():
     assert to_decimal("") is None
 
 
-def test_exports(tmp_path):
+def test_row_flattening():
     p = jsonld_extract.extract(JSONLD_HTML, "https://shop.test/p/1", "t", ["Home"])
-    rows = _rows(p)
+    rows = p.rows()
     assert len(rows) == 1 and rows[0]["category_path"] == "Sails > Wave"
 
     node = {"id": 1, "handle": "h", "title": "T", "vendor": "V", "options": [{"name": "Size"}],
             "variants": [{"sku": "a", "option1": "S", "price": "10", "available": True},
                          {"sku": "b", "option1": "M", "price": "10", "available": True}],
             "images": [], "body_html": ""}
-    sp = _shopify_product(node, "t", "https://shop.test")
-    assert len(_rows(sp)) == 2          # one CSV row per variant
-
-    csv_path = to_csv([p, sp], tmp_path / "out.csv")
-    xml_path = to_xml([p, sp], tmp_path / "out.xml")
-    assert "Duotone" in csv_path.read_text(encoding="utf-8")
-    assert b"<rss" in xml_path.read_bytes()
+    sp = shopify_product(node, "t", "https://shop.test")
+    assert len(sp.rows()) == 2          # one row per variant

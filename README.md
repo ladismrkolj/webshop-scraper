@@ -117,10 +117,47 @@ if a selector finds them the other way round.
 Docker is only for the scheduled daily runs. For testing, work directly:
 
 ```bash
-git clone <repo> && cd webshop-scraper
-python -m venv .venv && source .venv/bin/activate
+git clone https://github.com/ladismrkolj/webshop-scraper.git
+cd webshop-scraper
+python3 -m venv .venv && source .venv/bin/activate
 pip install -e .            # or: pip install -r requirements.txt
 ```
+
+### macOS
+
+Two things to know, both about Python rather than this project:
+
+**Use Python 3.11 or newer.** The Python that ships with macOS is too old
+(3.9); the code uses `X | None` annotations that fail to resolve at runtime
+there.
+
+```bash
+brew install python@3.12
+python3.12 -m venv .venv && source .venv/bin/activate
+python -V                   # 3.12.x - check before installing
+pip install -e .
+```
+
+**Always use the venv.** Homebrew's Python refuses to `pip install` into itself
+(`error: externally-managed-environment`, PEP 668). Activating a venv first is
+the whole fix — do not reach for `--break-system-packages`.
+
+No compiler or Xcode setup is needed. The three compiled dependencies
+(`selectolax`, `lxml`, `cryptography`, plus `pydantic-core`) all publish
+`arm64`/`universal2` wheels, so `pip` downloads binaries on both Apple Silicon
+and Intel. If pip ever does start compiling, it means it could not match a
+wheel to your Python version - check `python -V` first, before installing
+build tools.
+
+Then verify the whole thing works offline, with no shop involved:
+
+```bash
+pip install -e '.[dev]'
+pytest -q                   # 14 tests, runs a fake shop on localhost
+```
+
+If that passes, the engine is sound on your machine and anything failing after
+this point is about a specific shop, not the setup.
 
 Then, from anywhere:
 

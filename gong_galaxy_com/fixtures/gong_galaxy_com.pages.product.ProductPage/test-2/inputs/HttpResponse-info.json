@@ -1,0 +1,94 @@
+{
+  "url": "https://www.gong-galaxy.com/en/products/pack-surf-inflatable-compact-3",
+  "status": 200,
+  "headers": {
+    "Content-Length": [
+      "365271"
+    ],
+    "Date": [
+      "Fri, 21 Aug 2026 22:47:11 GMT"
+    ],
+    "Content-Type": [
+      "text/html; charset=utf-8"
+    ],
+    "X-Permitted-Cross-Domain-Policies": [
+      "none"
+    ],
+    "Cf-Cache-Status": [
+      "DYNAMIC"
+    ],
+    "Set-Cookie": [
+      "_shopify_essential=:AaAmgbbsAAEA6wRRPki3CcFTP42LziPUFdeg_MW51BLwo3HBRUL96yUGmc_8Lu9_mHKgTEmmg7hCRdFDTKSz3ACh7hkGy7XVX7AvB8KP1BwOqscHtel1451Ad2KHDg_ySABxH6TnCS50f9kac22Fl1kpuO7_ZwAwJbbcXxx9SDV7_LeE4g795MNjdOnDBq6FQ6_efukSNSElSgkbz4MzLD1uAlX5v67Q5CoVX_exeiO1vy-_UJhFiR9f3vgrFv5O9P5Ru5OBV8QCYvdvIv1YaB1RreQ3SZk3sWwplzsWyrcDz50r8IL63BjDuQiXIAWReQDzZ03ahEeZUq3NHzn5zLNttJ7rlRg2NqdsVs3egB2SvR2ojnLxsoHXKoa9JZ-tJVD203J5pFlyAngQ18uy8TQGdHxtVvlty7jowQIWw4wO5QiFWGibKqLAw3XprDDx2WPIKS6oQLjFRzTim6tyKVQ7MhysQzGbx6uOB3mkL0vXRQR5u4D4YJbpRemPIhXZm5B_rNx8tPSgXJLbvSxDfn4pfanrZ2WwG-OE8js-F0_mOqB4b-zNIO0i86hDvxQHXlYCyn4mKfeFpkY:; Max-Age=31536000; Path=/; HttpOnly; Secure; Priority=High; SameSite=Lax"
+    ],
+    "Link": [
+      "<https://cdn.shopify.com>; rel=\"preconnect\", <https://cdn.shopify.com>; rel=\"preconnect\"; crossorigin, <//www.gong-galaxy.com/cdn/shop/t/284/assets/common.css?v=184412034302476324361786020643>; as=\"style\"; rel=\"preload\", <//www.gong-galaxy.com/cdn/shop/t/284/assets/custom-gong.css?v=89582011974471314701786020642>; as=\"style\"; rel=\"preload\", <//www.gong-galaxy.com/cdn/shop/t/284/assets/template-product.css?v=3997676700576653761786020501>; as=\"style\"; rel=\"preload\", <//www.gong-galaxy.com/cdn/shop/t/284/assets/lozad.min.js?v=39002872706601237641786020501>; as=\"script\"; rel=\"preload\", <//www.gong-galaxy.com/cdn/shop/t/284/assets/custom-gong.js?v=51127459233983463121786020501>; as=\"script\"; rel=\"preload\", <https://cdn.shopify.com/extensions/01a024a4-a70a-73a1-b66e-0e30b63f0095/digital-appointments-534/assets/style.css>; as=\"style\"; rel=\"preload\", <https://www.gong-galaxy.com/cdn/shopifycloud/portable-wallets/latest/accelerated-checkout-backwards-compat.css>; as=\"style\"; rel=\"preload\"; crossorigin, <//www.gong-galaxy.com/cdn/shop/files/00-25-1500-SURF-PACK-INFLATABLE_BOARD-COMPACT-GONGSURF-TB_f268be6e-50b0-410d-8ced-922ba515d88b.png?v=1746630336&width=90>; as=\"image\"; rel=\"preload\"; imagesrcset=\"//www.gong-galaxy.com/cdn/shop/files/00-25-1500-SURF-PACK-INFLATABLE_BOARD-COMPACT-GONGSURF-TB_f268be6e-50b0-410d-8ced-922ba515d88b.png?v=1746630336&width=45 45w, //www.gong-galaxy.com/cdn/shop/files/00-25-1500-SURF-PACK-INFLATABLE_BOARD-COMPACT-GONGSURF-TB_f268be6e-50b0-410d-8ced-922ba515d88b.png?v=1746630336&width=90 90w\"; imagesizes=\"(min-width:414px) 90px, 45px\""
+    ],
+    "Speculation-Rules": [
+      "\"/cdn/shopifycloud/storefront/assets/storefront/storefronts.moderate.specrules-eb468f32.json\""
+    ],
+    "Etag": [
+      "\"page_cache:79159755071:ProductDetailsController:f48a2b5b5e5f590f94f4750b8644c042:03d523da4455284b4d98e90e680f5e27\""
+    ],
+    "Nel": [
+      "{\"report_to\":\"cf-nel\",\"success_fraction\":0.01,\"max_age\":604800}"
+    ],
+    "Shopify-Complexity-Score": [
+      "0"
+    ],
+    "Shopify-Complexity-Score-V2": [
+      "926"
+    ],
+    "X-Frame-Options": [
+      "DENY"
+    ],
+    "Content-Security-Policy": [
+      "block-all-mixed-content; frame-ancestors 'none'; upgrade-insecure-requests;"
+    ],
+    "Access-Control-Allow-Origin": [
+      "*"
+    ],
+    "Strict-Transport-Security": [
+      "max-age=7889238"
+    ],
+    "X-Dc": [
+      "gcp-europe-west1,gcp-europe-west1,gcp-europe-west1"
+    ],
+    "Vary": [
+      "accept-encoding"
+    ],
+    "Alt-Svc": [
+      "h3=\":443\"; ma=86400"
+    ],
+    "Content-Language": [
+      "en-SI"
+    ],
+    "Powered-By": [
+      "Shopify"
+    ],
+    "Server-Timing": [
+      "processing;dur=933;desc=\"gc:54\", db;dur=242, db_async;dur=27.342, fetch;dur=135, render;dur=370, asn;desc=\"5603\", edge;desc=\"MXP\", country;desc=\"SI\", theme;desc=\"193353089399\", pageType;desc=\"product\", servedBy;desc=\"mmd6\", requestID;desc=\"0eabe9b2-6198-480b-b3d4-2bc3f9597538-1787352430\", _y;desc=\"00000000-0000-0000-5000-000000000000\", _s;desc=\"00000000-0000-0000-5000-000000000000\", _cmp;desc=\"3.ampS_SI061_t_f_*QYlMWjrQ6C*OiC2fyLdRQ\", compressionLevel;desc=\"5\", compressionTime;dur=87.543"
+    ],
+    "X-Download-Options": [
+      "noopen"
+    ],
+    "Server": [
+      "cloudflare"
+    ],
+    "X-Xss-Protection": [
+      "1; mode=block"
+    ],
+    "X-Request-Id": [
+      "0eabe9b2-6198-480b-b3d4-2bc3f9597538-1787352430"
+    ],
+    "Report-To": [
+      "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=UHUv593aV%2Fupv7v4fl8u%2Fzkm9ZRYKWTLBQM3N2xZ5ZYJr5snvMyZEoreogaubp0qf9UpH2MH30BypjN7suAN6GpX4QWwRW89PdvI6CQ1x%2Bivp9NUDuqoL6Xj9u4aEPQco%2FddfDw%3D\"}]}"
+    ],
+    "X-Content-Type-Options": [
+      "nosniff"
+    ],
+    "Cf-Ray": [
+      "a2ed2d913ec80e9f-MXP"
+    ]
+  },
+  "_encoding": "utf-8"
+}

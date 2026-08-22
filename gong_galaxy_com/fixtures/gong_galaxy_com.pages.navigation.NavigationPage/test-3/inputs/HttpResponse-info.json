@@ -1,0 +1,88 @@
+{
+  "url": "https://www.gong-galaxy.com/en/collections/surf-surfboards",
+  "status": 200,
+  "headers": {
+    "Content-Length": [
+      "322709"
+    ],
+    "Date": [
+      "Fri, 21 Aug 2026 22:41:09 GMT"
+    ],
+    "Content-Type": [
+      "text/html; charset=utf-8"
+    ],
+    "X-Permitted-Cross-Domain-Policies": [
+      "none"
+    ],
+    "Cf-Cache-Status": [
+      "DYNAMIC"
+    ],
+    "Set-Cookie": [
+      "_shopify_essential=:AaAmfDCrAAEAHr6MOM8FS2UIWehPsIH3_xIw8T6ddWt_-rh-Mn75lc2k9OS5kgVaBWAM8bpP412LnG7b4i5q0Dc-aM00SGZjjW32eq4ou_Tc7HDsD6HWIxTUGHmR7QlMGNJvTfzBXaxa-QbnIy0lCv-1z2J77lVvu8bVko0oWxXJtDDfKp7Nz-fJpO7P5i-yQqtbHHVrt7YZ9jUhRUMaQzqMNdqHaCsKZ4M9xOzOSehUlrRlj6xxVwppIIkH8qmzKiWoZ13mbeEFtxDZ7r8xd2vFhZotrE3iVtoMFqoAOBsvxK8eYURSetKLRykVMNlKsGabcIUSEBjAzJsH1zdpubMiDb23-i5PI6NEl2TTDJDiVXLLpvPrz4cksTrgx6zVnfzf6VhFsBKfWJKZwF7XJQEoIKs1r35lXZhfizbrUj66SmKE6jODjKFJTCnWp_a_hSmfcwAXN9blwfS3xi9MYmXFDxIKAIlD9h5diVT5_MZ2KkwlxydVBBdHHa8y9HJR9z5dUdkgt_X9XEICa85U3v5zC-c72imNuuKFp4_WtlkmpaIA-UyDAxoDFqbrV2aabKGZCFo:; Max-Age=31536000; Path=/; HttpOnly; Secure; Priority=High; SameSite=Lax"
+    ],
+    "Link": [
+      "<https://cdn.shopify.com>; rel=\"preconnect\", <https://cdn.shopify.com>; rel=\"preconnect\"; crossorigin, <//www.gong-galaxy.com/cdn/shop/t/284/assets/common.css?v=184412034302476324361786020643>; as=\"style\"; rel=\"preload\", <//www.gong-galaxy.com/cdn/shop/t/284/assets/custom-gong.css?v=89582011974471314701786020642>; as=\"style\"; rel=\"preload\", <//www.gong-galaxy.com/cdn/shop/t/284/assets/template-collection.css?v=145576344192789191501786020501>; as=\"style\"; rel=\"preload\", <//www.gong-galaxy.com/cdn/shop/t/284/assets/lozad.min.js?v=39002872706601237641786020501>; as=\"script\"; rel=\"preload\", <//www.gong-galaxy.com/cdn/shop/t/284/assets/custom-gong.js?v=51127459233983463121786020501>; as=\"script\"; rel=\"preload\", <https://cdn.shopify.com/extensions/01a024a4-a70a-73a1-b66e-0e30b63f0095/digital-appointments-534/assets/style.css>; as=\"style\"; rel=\"preload\", <https://www.gong-galaxy.com/cdn/shopifycloud/portable-wallets/latest/accelerated-checkout-backwards-compat.css>; as=\"style\"; rel=\"preload\"; crossorigin"
+    ],
+    "Etag": [
+      "\"page_cache:79159755071:CollectionDetailsController:183c19efb8bf55de83b89204893c705b:03d523da4455284b4d98e90e680f5e27\""
+    ],
+    "Nel": [
+      "{\"report_to\":\"cf-nel\",\"success_fraction\":0.01,\"max_age\":604800}"
+    ],
+    "Shopify-Complexity-Score": [
+      "12800"
+    ],
+    "Shopify-Complexity-Score-V2": [
+      "1280"
+    ],
+    "X-Frame-Options": [
+      "DENY"
+    ],
+    "Content-Security-Policy": [
+      "block-all-mixed-content; frame-ancestors 'none'; upgrade-insecure-requests;"
+    ],
+    "Strict-Transport-Security": [
+      "max-age=7889238"
+    ],
+    "X-Dc": [
+      "gcp-europe-west1,gcp-europe-west1,gcp-europe-west1"
+    ],
+    "Vary": [
+      "accept-encoding"
+    ],
+    "Alt-Svc": [
+      "h3=\":443\"; ma=86400"
+    ],
+    "Content-Language": [
+      "en-SI"
+    ],
+    "Powered-By": [
+      "Shopify"
+    ],
+    "Server-Timing": [
+      "processing;dur=1286;desc=\"gc:64\", db;dur=381, db_async;dur=56.08, fetch;dur=24, render;dur=251, asn;desc=\"5603\", edge;desc=\"MXP\", country;desc=\"SI\", theme;desc=\"193353089399\", pageType;desc=\"collection\", servedBy;desc=\"9hnl\", requestID;desc=\"ccdb7f46-ebaa-426a-9229-a60a746c504e-1787352068\", _y;desc=\"00000000-0000-0000-5000-000000000000\", _s;desc=\"00000000-0000-0000-5000-000000000000\", _cmp;desc=\"3.ampS_SI061_t_f_43tFGT-CQTyAOAmKJOI52w\", compressionLevel;desc=\"5\", compressionTime;dur=55.518"
+    ],
+    "X-Download-Options": [
+      "noopen"
+    ],
+    "Server": [
+      "cloudflare"
+    ],
+    "X-Xss-Protection": [
+      "1; mode=block"
+    ],
+    "X-Request-Id": [
+      "ccdb7f46-ebaa-426a-9229-a60a746c504e-1787352068"
+    ],
+    "Report-To": [
+      "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=P6IEN4O43H8To9pXsIcD7%2FhA4r23fT%2Fmy7ZSZ%2FP3otIDuQkqfSlwm3EHPGB6xjSSI%2BHOaYDtmTBhJM55IyK6tM3e2u%2F1zF7mAZAOFdPaHOV6I5gvxCBrBGb%2FPFdaauDumRIEZmY%3D\"}]}"
+    ],
+    "X-Content-Type-Options": [
+      "nosniff"
+    ],
+    "Cf-Ray": [
+      "a2ed24ba1ef4ee67-MXP"
+    ]
+  },
+  "_encoding": "utf-8"
+}

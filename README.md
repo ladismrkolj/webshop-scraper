@@ -16,6 +16,7 @@ break another, and each project pins its own dependencies.
 | `kitenatura_com/` | [kitenatura.com](https://www.kitenatura.com) | Shopify |
 | `obsession_si/` | [obsession.si](https://www.obsession.si) | — |
 | `infinitysport_si/` | [infinitysport.si](https://www.infinitysport.si) | — |
+| `gong_galaxy_com/` | [gong-galaxy.com](https://www.gong-galaxy.com/en) | Shopify |
 
 ## Layout
 
@@ -86,13 +87,19 @@ legitimately changes its markup.
 
 `settings.py` in each project wires up [Zyte
 API](https://docs.zyte.com/zyte-api/get-started.html) but leaves it off by
-default — the shops above serve complete HTML over plain HTTP. Export a key to
-route requests through it when a site starts blocking or needs browser
-rendering:
+default. Export a key to route requests through it when a site blocks or needs
+browser rendering:
 
 ```bash
 export ZYTE_API_KEY=your-key-here
 ```
+
+Most of these shops serve complete HTML over plain HTTP and need no key.
+**`gong_galaxy_com` is the exception**: gong-galaxy.com sits behind an anti-bot
+layer that answers a plain Scrapy request with a "Verifying your connection..."
+interstitial and then 429, whatever User-Agent it sends, so crawling it requires
+a Zyte API key. Its page objects parse ordinary raw HTML, so its fixture tests
+still run offline without one.
 
 ## Adding a shop
 

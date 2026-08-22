@@ -1,0 +1,91 @@
+{
+  "url": "https://www.gong-galaxy.com/en/collections/surf",
+  "status": 200,
+  "headers": {
+    "Content-Length": [
+      "329305"
+    ],
+    "Date": [
+      "Fri, 21 Aug 2026 22:40:27 GMT"
+    ],
+    "Content-Type": [
+      "text/html; charset=utf-8"
+    ],
+    "X-Permitted-Cross-Domain-Policies": [
+      "none"
+    ],
+    "Cf-Cache-Status": [
+      "DYNAMIC"
+    ],
+    "Set-Cookie": [
+      "_shopify_essential=:AaAme4vvAAEAwqPMEedugJjz20oFHkf0mcJrKYj1XG_vK2k-sJV4nii6CNkx7CZFpUpr2wnna5WJid8R-PdfDsjgvrdQLid7caOddjBCFO3taaH6ZLYoUoBP1JvzPzs48WqHAw69Cvzasp4eDGqTKGNLvgKj3gfPqqnPO2sPiqIjAewJO1m8dRL9kt7glP2VWD2-Yl-IXSFkcqkLjGXWsZqOi2RD2_Pm-Neu30bAGFedH9jEvNxogG1EXCR8XtW2tq5vdgynPyqEdVDylP7zJcMqaRH9QwAapXW2m300c43A62GERRk7oAuohmlz1uCh5W5nn8s-9ldRkUBsq-BM1hgcikTn9KT1nl9QaIvw-6qpw_W66Zqm2VjJTGXXU1Iz_Bl-Ul_MX8ytwPkbDfoR1nE616BF3Y2gBpB0z-WtEBHnpsGjizil-xEM_AXpdbK2AlmVVEObHjjTEbgsn9ygAPXT7I8cSfPW_K6LvT1dwDsBREbM3kdl5x3ZpKx0QcGdh3TvVK03oKFm1OOv3knyhYupuUF8px4h3nn109pj1bb1m8vOkql5Dg0PLpZoghaapEXuSKqiMx00IIg:; Max-Age=31536000; Path=/; HttpOnly; Secure; Priority=High; SameSite=Lax"
+    ],
+    "Link": [
+      "<https://cdn.shopify.com>; rel=\"preconnect\", <https://cdn.shopify.com>; rel=\"preconnect\"; crossorigin, <//www.gong-galaxy.com/cdn/shop/t/284/assets/common.css?v=184412034302476324361786020643>; as=\"style\"; rel=\"preload\", <//www.gong-galaxy.com/cdn/shop/t/284/assets/custom-gong.css?v=89582011974471314701786020642>; as=\"style\"; rel=\"preload\", <//www.gong-galaxy.com/cdn/shop/t/284/assets/template-collection.css?v=145576344192789191501786020501>; as=\"style\"; rel=\"preload\", <//www.gong-galaxy.com/cdn/shop/t/284/assets/lozad.min.js?v=39002872706601237641786020501>; as=\"script\"; rel=\"preload\", <//www.gong-galaxy.com/cdn/shop/t/284/assets/custom-gong.js?v=51127459233983463121786020501>; as=\"script\"; rel=\"preload\", <https://cdn.shopify.com/extensions/01a024a4-a70a-73a1-b66e-0e30b63f0095/digital-appointments-534/assets/style.css>; as=\"style\"; rel=\"preload\", <https://www.gong-galaxy.com/cdn/shopifycloud/portable-wallets/latest/accelerated-checkout-backwards-compat.css>; as=\"style\"; rel=\"preload\"; crossorigin"
+    ],
+    "Speculation-Rules": [
+      "\"/cdn/shopifycloud/storefront/assets/storefront/storefronts.moderate.specrules-eb468f32.json\""
+    ],
+    "Etag": [
+      "\"page_cache:79159755071:CollectionDetailsController:279511d0b609bd7f535dd3e00f30a0b6:03d523da4455284b4d98e90e680f5e27\""
+    ],
+    "Nel": [
+      "{\"report_to\":\"cf-nel\",\"success_fraction\":0.01,\"max_age\":604800}"
+    ],
+    "Shopify-Complexity-Score": [
+      "953"
+    ],
+    "Shopify-Complexity-Score-V2": [
+      "953"
+    ],
+    "X-Frame-Options": [
+      "DENY"
+    ],
+    "Content-Security-Policy": [
+      "block-all-mixed-content; frame-ancestors 'none'; upgrade-insecure-requests;"
+    ],
+    "Strict-Transport-Security": [
+      "max-age=7889238"
+    ],
+    "X-Dc": [
+      "gcp-europe-west1,gcp-europe-west1,gcp-europe-west1"
+    ],
+    "Vary": [
+      "accept-encoding"
+    ],
+    "Alt-Svc": [
+      "h3=\":443\"; ma=86400"
+    ],
+    "Content-Language": [
+      "en-SI"
+    ],
+    "Powered-By": [
+      "Shopify"
+    ],
+    "Server-Timing": [
+      "processing;dur=958;desc=\"gc:47\", db;dur=270, db_async;dur=31.715, fetch;dur=31, render;dur=289, asn;desc=\"5603\", edge;desc=\"MXP\", country;desc=\"SI\", theme;desc=\"193353089399\", pageType;desc=\"collection\", servedBy;desc=\"ls2w\", requestID;desc=\"8b3cbade-69ae-4e65-a974-1610ab221eed-1787352026\", _y;desc=\"00000000-0000-0000-5000-000000000000\", _s;desc=\"00000000-0000-0000-5000-000000000000\", _cmp;desc=\"3.ampS_SI061_t_f_BSyU8zbLR-igWsXSYhH2fg\", compressionLevel;desc=\"5\", compressionTime;dur=58.754"
+    ],
+    "X-Download-Options": [
+      "noopen"
+    ],
+    "Server": [
+      "cloudflare"
+    ],
+    "X-Xss-Protection": [
+      "1; mode=block"
+    ],
+    "X-Request-Id": [
+      "8b3cbade-69ae-4e65-a974-1610ab221eed-1787352026"
+    ],
+    "Report-To": [
+      "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=4j5mwr3KVXni8xhLFUxI6HAR%2BbnYJNVYC2gc5LObPcwEudV3Hq1Qa15tLPtyPZyF%2F2VRACXVtJEKgDu%2FeWqTTkkvQ1rxdJ4zRpn5g7X5MWMQCY4LLfjIpxeicuBUp3Xv%2FkiXTLE%3D\"}]}"
+    ],
+    "X-Content-Type-Options": [
+      "nosniff"
+    ],
+    "Cf-Ray": [
+      "a2ed23b2dd05ed2e-MXP"
+    ]
+  },
+  "_encoding": "utf-8"
+}

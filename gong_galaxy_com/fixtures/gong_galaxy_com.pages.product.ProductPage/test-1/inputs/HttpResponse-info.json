@@ -1,0 +1,94 @@
+{
+  "url": "https://www.gong-galaxy.com/en/products/gong-foil-front-wing-x-over-atmo",
+  "status": 200,
+  "headers": {
+    "Content-Length": [
+      "346172"
+    ],
+    "Date": [
+      "Fri, 21 Aug 2026 22:47:11 GMT"
+    ],
+    "Content-Type": [
+      "text/html; charset=utf-8"
+    ],
+    "X-Permitted-Cross-Domain-Policies": [
+      "none"
+    ],
+    "Cf-Cache-Status": [
+      "DYNAMIC"
+    ],
+    "Set-Cookie": [
+      "_shopify_essential=:AaAmgbbrAAEAmlsoK9t4OykC9ffbtoknN0ezXukUcWK8ZZKHnc12coURMoARbDFub0ys4eJp5tjlupstfFbcssj1q9tbZjiUFFPXPsJ0Jy1_WWe4IlZKjMVNXDg824f9z9jjML7BMBlVwmYVr4xMMRKLlUGvmvKDYBBffcMK_kMVvuOYcB14stbW6mI6eF9cMn3utCrSPenj6n096rdjTmBrXKaEKw-rFhltwIRsZDFgoqrW6FJRxED4seCBUXTJiHfyXxayMeLzajFp8rxX3TN3wmVxKt5CtMx7IcLxEk740WfQkV41x52IZFVoChZnJuNRH2DPkEUg49-yc9tWvNQbQrRA5RXrOXJfN9CAMamopESaUx6vsTp8WKgNPWvFELAYvqpzUBPJCnkC-1w_Fb5kVK7AoaqgKjTkjaTSVU-ONtMdKqwiVv_1siZ6pNi1FdHpivPhlCTEM0y4lmzX05UKOYMy3BX219utrjtTa_9H1eE0WBJF-sEtiwIYut0FYRCvUqylbJZh55ET3laJ_x9bOSrReRknaCzGEhutqWNuaqZTDnY6wqp7UhZfWVEA88wdoEMGVhxR7HM:; Max-Age=31536000; Path=/; HttpOnly; Secure; Priority=High; SameSite=Lax"
+    ],
+    "Link": [
+      "<https://cdn.shopify.com>; rel=\"preconnect\", <https://cdn.shopify.com>; rel=\"preconnect\"; crossorigin, <https://checkout-button-shopify.vercel.app>; rel=\"preconnect\"; crossorigin, <//www.gong-galaxy.com/cdn/shop/t/284/assets/common.css?v=184412034302476324361786020643>; as=\"style\"; rel=\"preload\", <//www.gong-galaxy.com/cdn/shop/t/284/assets/custom-gong.css?v=89582011974471314701786020642>; as=\"style\"; rel=\"preload\", <//www.gong-galaxy.com/cdn/shop/t/284/assets/template-product.css?v=3997676700576653761786020501>; as=\"style\"; rel=\"preload\", <//www.gong-galaxy.com/cdn/shop/t/284/assets/lozad.min.js?v=39002872706601237641786020501>; as=\"script\"; rel=\"preload\", <//www.gong-galaxy.com/cdn/shop/t/284/assets/custom-gong.js?v=51127459233983463121786020501>; as=\"script\"; rel=\"preload\", <https://checkout-button-shopify.vercel.app/styles.css>; as=\"style\"; rel=\"preload\"; crossorigin, <https://cdn.shopify.com/extensions/01a024a4-a70a-73a1-b66e-0e30b63f0095/digital-appointments-534/assets/style.css>; as=\"style\"; rel=\"preload\", <//www.gong-galaxy.com/cdn/shop/t/284/assets/section-main-hero.css?v=97082>; as=\"style\"; rel=\"preload\", <https://www.gong-galaxy.com/cdn/shopifycloud/portable-wallets/latest/accelerated-checkout-backwards-compat.css>; as=\"style\"; rel=\"preload\"; crossorigin, <//www.gong-galaxy.com/cdn/shop/files/26-1500-FOIL-STABS-PERF_SERIES-FRONT_WING-X-OVER-GONGFOIL-01_58ec3795-479a-4af9-b740-cad4485c6943.jpg?v=1781168531&width=90>; as=\"image\"; rel=\"preload\"; imagesrcset=\"//www.gong-galaxy.com/cdn/shop/files/26-1500-FOIL-STABS-PERF_SERIES-FRONT_WING-X-OVER-GONGFOIL-01_58ec3795-479a-4af9-b740-cad4485c6943.jpg?v=1781168531&width=45 45w, //www.gong-galaxy.com/cdn/shop/files/26-1500-FOIL-STABS-PERF_SERIES-FRONT_WING-X-OVER-GONGFOIL-01_58ec3795-479a-4af9-b740-cad4485c6943.jpg?v=1781168531&width=90 90w\"; imagesizes=\"(min-width:414px) 90px, 45px\""
+    ],
+    "Speculation-Rules": [
+      "\"/cdn/shopifycloud/storefront/assets/storefront/storefronts.moderate.specrules-eb468f32.json\""
+    ],
+    "Etag": [
+      "\"page_cache:79159755071:ProductDetailsController:72ec1482d580f135b8e80e00dbe20237:03d523da4455284b4d98e90e680f5e27\""
+    ],
+    "Nel": [
+      "{\"report_to\":\"cf-nel\",\"success_fraction\":0.01,\"max_age\":604800}"
+    ],
+    "Shopify-Complexity-Score": [
+      "0"
+    ],
+    "Shopify-Complexity-Score-V2": [
+      "1088"
+    ],
+    "X-Frame-Options": [
+      "DENY"
+    ],
+    "Content-Security-Policy": [
+      "block-all-mixed-content; frame-ancestors 'none'; upgrade-insecure-requests;"
+    ],
+    "Access-Control-Allow-Origin": [
+      "*"
+    ],
+    "Strict-Transport-Security": [
+      "max-age=7889238"
+    ],
+    "X-Dc": [
+      "gcp-europe-west1,gcp-europe-west1,gcp-europe-west1"
+    ],
+    "Vary": [
+      "accept-encoding"
+    ],
+    "Alt-Svc": [
+      "h3=\":443\"; ma=86400"
+    ],
+    "Content-Language": [
+      "en-SI"
+    ],
+    "Powered-By": [
+      "Shopify"
+    ],
+    "Server-Timing": [
+      "processing;dur=1092;desc=\"gc:22\", db;dur=315, db_async;dur=40.504, render;dur=554, asn;desc=\"5603\", edge;desc=\"MXP\", country;desc=\"SI\", theme;desc=\"193353089399\", pageType;desc=\"product\", servedBy;desc=\"9s6q\", requestID;desc=\"c7dff444-5936-4fc1-93c4-9e6b8b15cbbe-1787352430\", _y;desc=\"00000000-0000-0000-5000-000000000000\", _s;desc=\"00000000-0000-0000-5000-000000000000\", _cmp;desc=\"3.ampS_SI061_t_f_dFH-8VdQTWSpg8bB62wxMA\", compressionLevel;desc=\"5\", compressionTime;dur=55.298"
+    ],
+    "X-Download-Options": [
+      "noopen"
+    ],
+    "Server": [
+      "cloudflare"
+    ],
+    "X-Xss-Protection": [
+      "1; mode=block"
+    ],
+    "X-Request-Id": [
+      "c7dff444-5936-4fc1-93c4-9e6b8b15cbbe-1787352430"
+    ],
+    "Report-To": [
+      "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=wDtiCBaNp1iSUIMMbw7UO%2BfCBdeWOobizECaWlxUIUkjM30GUb4AeW49pGv3SP9JqfEpABdm%2FC2eEyOLENmJdkLyP0rSZiwnXvOLhl%2FuJ11ANlWp2MPqowjrcHtk3VNriWYn8Lc%3D\"}]}"
+    ],
+    "X-Content-Type-Options": [
+      "nosniff"
+    ],
+    "Cf-Ray": [
+      "a2ed2d913c615837-MXP"
+    ]
+  },
+  "_encoding": "utf-8"
+}

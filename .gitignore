@@ -9,3 +9,10 @@ venv/
 .scrapy/
 httpcache/
 output/
+*.log
+
+# Scrape-skill working files
+.scrape/
+
+# macOS
+.DS_Store

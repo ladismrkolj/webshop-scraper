@@ -1,0 +1,40 @@
+{
+  "url": "https://www.recharge.si/windsurf/deske/slalom-freeride/jadralna-deska-patrik-slalom-100l-2025",
+  "status": 200,
+  "headers": {
+    "Server": [
+      "nginx"
+    ],
+    "Date": [
+      "Thu, 20 Aug 2026 13:21:28 GMT"
+    ],
+    "Content-Type": [
+      "text/html; charset=UTF-8"
+    ],
+    "Vary": [
+      "Accept-Encoding"
+    ],
+    "Set-Cookie": [
+      "hasNewGoogleConsent=true"
+    ],
+    "Expires": [
+      "Thu, 19 Nov 1981 08:52:00 GMT"
+    ],
+    "Cache-Control": [
+      "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
+    ],
+    "Pragma": [
+      "no-cache"
+    ],
+    "X-Powered-By": [
+      "SIEL.NINJA"
+    ],
+    "Link": [
+      "<https://www.recharge.si/windsurf/deske/slalom-freeride/jadralna-deska-patrik-f-race-130-2026>; rel=\"canonical\""
+    ],
+    "Strict-Transport-Security": [
+      "max-age=31536000; includeSubDomains"
+    ]
+  },
+  "_encoding": "utf-8"
+}

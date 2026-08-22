@@ -1,0 +1,75 @@
+{
+  "available_sizes": [
+    "S",
+    "M",
+    "L",
+    "XL"
+  ],
+  "brand": "HUF",
+  "breadcrumb": "Kratke hlače",
+  "category": "Kratke hlače",
+  "composition": "100% bombaž",
+  "currency": "EUR",
+  "description": "KLJUČNE LASTNOSTI:\n• SESTAVA: 100% bombaž\n• FIT: Relaxed\n• Elastični predel v bokih",
+  "fit": "Relaxed",
+  "images": [
+    "https://www.obsession.si/images/thumbs/0379046_kopalke-huf-atelier-easy-navy-blazer-s_50.jpeg",
+    "https://www.obsession.si/images/thumbs/0378943_kr-hlace-huf-atelier-easy-red-m_50.jpeg"
+  ],
+  "main_image": "https://www.obsession.si/images/thumbs/0379046_kopalke-huf-atelier-easy-navy-blazer-s_50.jpeg",
+  "price": "33,96 €",
+  "product_id": "207810",
+  "product_name": "ATELIER EASY",
+  "url": "https://www.obsession.si/si/naish-est-1979-t-shirt",
+  "variants": [
+    {
+      "color": "NAVY BLAZER",
+      "lowest_price_30d": "33,96 €",
+      "size": "S",
+      "sku": "888401773361",
+      "variant_id": "207811"
+    },
+    {
+      "color": "NAVY BLAZER",
+      "lowest_price_30d": "33,96 €",
+      "size": "M",
+      "sku": "888401773378",
+      "variant_id": "207812"
+    },
+    {
+      "color": "RED",
+      "lowest_price_30d": "33,96 €",
+      "size": "M",
+      "sku": "888401773422",
+      "variant_id": "207816"
+    },
+    {
+      "color": "RED",
+      "lowest_price_30d": "33,96 €",
+      "size": "L",
+      "sku": "888401773439",
+      "variant_id": "207817"
+    },
+    {
+      "color": "NAVY BLAZER",
+      "lowest_price_30d": "33,96 €",
+      "size": "L",
+      "sku": "888401773385",
+      "variant_id": "207813"
+    },
+    {
+      "color": "NAVY BLAZER",
+      "lowest_price_30d": "33,96 €",
+      "size": "XL",
+      "sku": "888401773392",
+      "variant_id": "207814"
+    },
+    {
+      "color": "RED",
+      "lowest_price_30d": "33,96 €",
+      "size": "XL",
+      "sku": "888401773446",
+      "variant_id": "207818"
+    }
+  ]
+}

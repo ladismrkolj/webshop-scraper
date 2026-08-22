@@ -1,0 +1,94 @@
+{
+  "url": "https://kitenatura.com/collections/foil-boards/products/dtf-skybrid-sls-2026",
+  "status": 200,
+  "headers": {
+    "Content-Length": [
+      "62441"
+    ],
+    "Date": [
+      "Thu, 20 Aug 2026 17:21:13 GMT"
+    ],
+    "Content-Type": [
+      "text/html; charset=utf-8"
+    ],
+    "X-Permitted-Cross-Domain-Policies": [
+      "none"
+    ],
+    "Cf-Cache-Status": [
+      "DYNAMIC"
+    ],
+    "Set-Cookie": [
+      "_shopify_essential=:AaAgMO1FAAEA8L6kZHw8TwKSU6d3azjmw18t2kGH4OQOi99v1BhOaqviZ-wAy7SJkOfD_3nVvJ4dyORzNz-CgX-ZciYM8OvdSSGpPJTt2aoDpovUOVeYR4suqg6cG2fkWOlT9fdIwA6ChHVVUdgfgEH62J2MaL54RPUe2q7JkXRVmTbIBW2RmekWM7lZURmKnNEcV433t4cVRywBRFAsKsOP-mSslhFjVkdlLCMhbOoJW91W4B0gfSZK1_9GWffrqxF26NaOX-KxLK5VgUfy54FxwR4XWcB8CG0OAmM6vAMJbOUxVvb0pO3rhKMvpgrFPtkzXul2JsKAalYKjJVpZz0Yoo6CiJ0J_jTZN6slIfobIMcjv9Uc_etoHHWAU7ujhfOnQfUQW9xI7ZiIADmxz7Wolq3CGMZoXQfCvJltAOvm5pX6iev5w3cSM7G8ylCYi3wDRGU0SkrpuQe3jSE651KORtRt6j8RPoHlIRpXEWL9SdGh03Nu7aJjtLMKrGQDVBW3Mq5I3DHdjdJJf_E4vuHF8QEmVFVnkuWX68_tpeOi5FYF8wz7jgq2opKu8mMjl5CzCFjq:; Max-Age=31536000; Path=/; HttpOnly; Secure; Priority=High; SameSite=Lax"
+    ],
+    "Link": [
+      "<https://cdn.shopify.com>; rel=\"preconnect\", <https://cdn.shopify.com>; rel=\"preconnect\"; crossorigin, <https://cs.iubenda.com>; rel=\"preconnect\", <//kitenatura.com/cdn/shop/t/4/assets/theme.css?v=125433647014908592721786986963>; as=\"style\"; rel=\"preload\", <//kitenatura.com/cdn/shop/t/4/assets/ripple.css?v=100240391239311985871786986963>; as=\"style\"; rel=\"preload\", <//cs.iubenda.com/sync/4108740.js>; as=\"script\"; rel=\"preload\", <https://cdn.shopify.com/extensions/019d7141-8817-7e81-9717-e419047210ff/shopify-app-template-php-79/assets/consent-tracking.js>; as=\"script\"; rel=\"preload\", <https://kitenatura.com/cdn/shopifycloud/portable-wallets/latest/accelerated-checkout-backwards-compat.css>; as=\"style\"; rel=\"preload\"; crossorigin"
+    ],
+    "Speculation-Rules": [
+      "\"/cdn/shopifycloud/storefront/assets/storefront/storefronts.moderate.specrules-eb468f32.json\""
+    ],
+    "Etag": [
+      "\"page_cache:83363823949:ProductDetailsController:8e90b66539c41ff30f25d4fc461afb12:03d523da4455284b4d98e90e680f5e27\""
+    ],
+    "Nel": [
+      "{\"report_to\":\"cf-nel\",\"success_fraction\":0.01,\"max_age\":604800}"
+    ],
+    "Shopify-Complexity-Score": [
+      "0"
+    ],
+    "Shopify-Complexity-Score-V2": [
+      "648"
+    ],
+    "X-Frame-Options": [
+      "DENY"
+    ],
+    "Content-Security-Policy": [
+      "block-all-mixed-content; frame-ancestors 'none'; upgrade-insecure-requests;"
+    ],
+    "Access-Control-Allow-Origin": [
+      "*"
+    ],
+    "Strict-Transport-Security": [
+      "max-age=7889238"
+    ],
+    "X-Dc": [
+      "gcp-europe-west1,gcp-europe-west1,gcp-europe-west1"
+    ],
+    "Vary": [
+      "accept-encoding"
+    ],
+    "Alt-Svc": [
+      "h3=\":443\"; ma=86400"
+    ],
+    "Content-Language": [
+      "en-SI"
+    ],
+    "Powered-By": [
+      "Shopify"
+    ],
+    "Server-Timing": [
+      "processing;dur=654, db;dur=173, db_async;dur=47.002, parse;dur=2, render;dur=113, asn;desc=\"5603\", edge;desc=\"MXP\", country;desc=\"SI\", theme;desc=\"194623177037\", pageType;desc=\"product\", servedBy;desc=\"mkf6\", requestID;desc=\"515145b0-bf7a-4cdf-aea5-7780dbbb1c3b-1787246472\", _y;desc=\"00000000-0000-0000-5000-000000000000\", _s;desc=\"00000000-0000-0000-5000-000000000000\", _cmp;desc=\"3.ampS_SI061_t_f_pSkENUAtT8GHyDq6Najx8g\", compressionLevel;desc=\"5\", compressionTime;dur=14.443"
+    ],
+    "X-Download-Options": [
+      "noopen"
+    ],
+    "Server": [
+      "cloudflare"
+    ],
+    "X-Xss-Protection": [
+      "1; mode=block"
+    ],
+    "X-Request-Id": [
+      "515145b0-bf7a-4cdf-aea5-7780dbbb1c3b-1787246472"
+    ],
+    "Report-To": [
+      "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=YW%2FqK9wR1OFYJN0LegVKVST27BAHhNGoo46x4E2Z57XrZPbK1ESgswEm4PDnI2qCPR%2B5VyuOkyqejHmfhGsxi%2FTM2K0Gg3revbardCK6fjgdAA1PyXhTSOakjVzGc39E\"}]}"
+    ],
+    "X-Content-Type-Options": [
+      "nosniff"
+    ],
+    "Cf-Ray": [
+      "a2e312b4794e4c73-MXP"
+    ]
+  },
+  "_encoding": "utf-8"
+}

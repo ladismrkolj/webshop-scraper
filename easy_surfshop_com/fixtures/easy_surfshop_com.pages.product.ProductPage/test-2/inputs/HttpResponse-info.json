@@ -1,0 +1,37 @@
+{
+  "url": "https://easy-surfshop.com/do/item/N-NP-123332-0798/Womens-wetsuit-NeilPryde-Spark-Fullsuit-54-BZ-Blac",
+  "status": 200,
+  "headers": {
+    "Date": [
+      "Thu, 20 Aug 2026 13:46:23 GMT"
+    ],
+    "Server": [
+      "Apache"
+    ],
+    "Pragma": [
+      "No-cache"
+    ],
+    "Cache-Control": [
+      "no-cache,no-store,max-age=0"
+    ],
+    "Expires": [
+      "Thu, 01 Jan 1970 00:00:00 GMT"
+    ],
+    "Set-Cookie": [
+      "lvi=ODYxNTMs; Max-Age=58060800; Expires=Thu, 22 Jun 2028 13:46:23 GMT; Path=/"
+    ],
+    "Link": [
+      "</assets/v/ec-all.min.css?v=20260820070105>; rel=preload; as=style; fetchpriority=high, </assets/v/ec-app.js?v=20260820070105>; rel=preload; as=script; fetchpriority=high, </gfx/logo.png>; rel=preload; as=image; fetchpriority=high"
+    ],
+    "Content-Language": [
+      "en"
+    ],
+    "Vary": [
+      "Accept-Encoding"
+    ],
+    "Content-Type": [
+      "text/html;charset=utf-8"
+    ]
+  },
+  "_encoding": "utf-8"
+}

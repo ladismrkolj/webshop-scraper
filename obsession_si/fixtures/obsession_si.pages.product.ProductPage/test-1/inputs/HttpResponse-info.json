@@ -1,0 +1,67 @@
+{
+  "url": "https://www.obsession.si/si/naish-est-1979-t-shirt",
+  "status": 200,
+  "headers": {
+    "Date": [
+      "Fri, 21 Aug 2026 17:37:29 GMT"
+    ],
+    "Content-Type": [
+      "text/html; charset=utf-8"
+    ],
+    "Cache-Control": [
+      "no-cache, no-store"
+    ],
+    "Pragma": [
+      "no-cache"
+    ],
+    "Report-To": [
+      "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=o%2FFPBxttSwVEoDdHFj75qJ01fiaJt%2BquEBbpSSvDbwui746IXFSsKC%2BhrkZH1RlIK0Teh1jgzUkjpMR6JXuyxF%2B%2FIPc1XiSU2QSog4o7khn%2BpmcLQt0s1b5vm%2BHDcJeieH7A\"}]}"
+    ],
+    "Content-Language": [
+      "sl-SI"
+    ],
+    "Vary": [
+      "Accept-Encoding"
+    ],
+    "Server": [
+      "cloudflare"
+    ],
+    "Set-Cookie": [
+      ".Nop.TempData=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; secure; samesite=lax; httponly"
+    ],
+    "X-Frame-Options": [
+      "SAMEORIGIN"
+    ],
+    "X-Xss-Protection": [
+      "1; mode=block"
+    ],
+    "X-Content-Type-Options": [
+      "nosniff"
+    ],
+    "Strict-Transport-Security": [
+      "max-age=31536000; includeSubDomains"
+    ],
+    "Content-Security-Policy": [
+      "default-src 'self'; connect-src *; font-src * data:; frame-src *; img-src * data:; media-src *; object-src *; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline';"
+    ],
+    "Referrer-Policy": [
+      "same-origin"
+    ],
+    "Permissions-Policy": [
+      "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=*, usb=()"
+    ],
+    "Cf-Cache-Status": [
+      "DYNAMIC"
+    ],
+    "Nel": [
+      "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}"
+    ],
+    "Cf-Ray": [
+      "a2eb67e689f7ee59-MXP"
+    ],
+    "Alt-Svc": [
+      "h3=\":443\"; ma=86400"
+    ]
+  },
+  "_encoding": "utf-8"
+}

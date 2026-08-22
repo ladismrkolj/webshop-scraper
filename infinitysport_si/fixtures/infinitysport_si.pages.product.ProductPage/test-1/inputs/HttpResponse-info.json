@@ -1,0 +1,37 @@
+{
+  "url": "https://infinitysport.si/si/ostali-sporti/windsurf/windsurf-jadra/14155-north-sails-ws-jadro-x-over-wave-2025",
+  "status": 200,
+  "headers": {
+    "Content-Length": [
+      "23212"
+    ],
+    "Server": [
+      "nginx"
+    ],
+    "Date": [
+      "Fri, 21 Aug 2026 17:43:32 GMT"
+    ],
+    "Content-Type": [
+      "text/html; charset=utf-8"
+    ],
+    "X-Powered-By": [
+      "PleskLin"
+    ],
+    "P3P": [
+      "CP=\"IDC DSP COR CURa ADMa OUR IND PHY ONL COM STA\""
+    ],
+    "Powered-By": [
+      "PrestaShop"
+    ],
+    "Set-Cookie": [
+      "PrestaShop-1724e2515f2c8401580771fcc299c16d=s3qGvc13v6%2FZTowe%2BrglYuvsZjhSDC7yukeT6xI4BbUfnucXVm%2FrQOiKznTGuAw7SHTkIeGejjw2g0liMI9NNmhEHMMWnm1ASqkAj1OZ9gTgymQxbIOOm%2Fp4ID7MnF5k9iGpS2gk6MV1aTghuO2GQeKrWM5crL5iYm%2FuFT6GWXn8AGLSJMhyyoKgqAbJlxOnJWJE9mfNXO53qdlEdTSVoA%3D%3D000160; expires=Mon, 31-Aug-2026 17:43:32 GMT; Max-Age=864000; path=/; domain=infinitysport.si; secure; httponly"
+    ],
+    "Vary": [
+      "Accept-Encoding"
+    ],
+    "X-Cache-Status": [
+      "MISS"
+    ]
+  },
+  "_encoding": "utf-8"
+}

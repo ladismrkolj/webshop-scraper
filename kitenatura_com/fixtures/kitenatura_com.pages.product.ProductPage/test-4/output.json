@@ -1,0 +1,140 @@
+{
+  "name": "Duotone Vegas 2026",
+  "brand_url": "https://kitenatura.com/collections/vendors?q=Duotone%20Kiteboarding",
+  "in_stock": true,
+  "selected_size": "7",
+  "canonical_url": "https://kitenatura.com/products/dtk-vegas-2026",
+  "product_id": "10646335226189",
+  "regular_price_min": null,
+  "price": 1729.0,
+  "availability": "InStock",
+  "variants": [
+    {
+      "variant_id": "53821055861069",
+      "color": "C23:blue/pink",
+      "size": "7",
+      "price": 1729.0,
+      "regular_price": null,
+      "on_sale": false,
+      "available": true,
+      "sku": "9010583339580"
+    },
+    {
+      "variant_id": "53821055893837",
+      "color": "C23:blue/pink",
+      "size": "8",
+      "price": 1809.0,
+      "regular_price": null,
+      "on_sale": false,
+      "available": true,
+      "sku": "9010583339559"
+    },
+    {
+      "variant_id": "53821055926605",
+      "color": "C23:blue/pink",
+      "size": "9",
+      "price": 1889.0,
+      "regular_price": null,
+      "on_sale": false,
+      "available": false,
+      "sku": "9010583339573"
+    },
+    {
+      "variant_id": "53821055959373",
+      "color": "C23:blue/pink",
+      "size": "10",
+      "price": 1979.0,
+      "regular_price": null,
+      "on_sale": false,
+      "available": true,
+      "sku": "9010583339542"
+    },
+    {
+      "variant_id": "53821055992141",
+      "color": "C23:blue/pink",
+      "size": "11",
+      "price": 2059.0,
+      "regular_price": null,
+      "on_sale": false,
+      "available": false,
+      "sku": "9010583339566"
+    },
+    {
+      "variant_id": "53821056024909",
+      "color": "C23:blue/pink",
+      "size": "12",
+      "price": 2139.0,
+      "regular_price": null,
+      "on_sale": false,
+      "available": false,
+      "sku": "9010583339535"
+    },
+    {
+      "variant_id": "53821056057677",
+      "color": "C23:blue/pink",
+      "size": "13",
+      "price": 2219.0,
+      "regular_price": null,
+      "on_sale": false,
+      "available": false,
+      "sku": "9010583339528"
+    }
+  ],
+  "price_min": 1729.0,
+  "description": null,
+  "discount_amount": null,
+  "page_title": "Duotone Vegas 2026 \u2014 Kite Natura",
+  "selected_color": "C23:blue/pink",
+  "breadcrumbs": [
+    "Home",
+    "Kites",
+    "Duotone Vegas 2026"
+  ],
+  "regular_price_max": null,
+  "image_count": 8,
+  "options": {
+    "Color": [
+      "C23:blue/pink"
+    ],
+    "Size": [
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+      "12",
+      "13"
+    ]
+  },
+  "mpn": "9010583339580",
+  "images": [
+    "https://kitenatura.com/cdn/shop/files/44260-3001_1.jpg?v=1787136801",
+    "https://kitenatura.com/cdn/shop/files/44260-3001_3.jpg?v=1787136801",
+    "https://kitenatura.com/cdn/shop/files/44260-3001_2_-_Copy.jpg?v=1787136802",
+    "https://kitenatura.com/cdn/shop/files/44260-3001_4.jpg?v=1787136801",
+    "https://kitenatura.com/cdn/shop/files/44260-3001_5.jpg?v=1787136800",
+    "https://kitenatura.com/cdn/shop/files/44260-3001_8.jpg?v=1787136801",
+    "https://kitenatura.com/cdn/shop/files/44260-3001_7.jpg?v=1787136801",
+    "https://kitenatura.com/cdn/shop/files/44260-3001_6.jpg?v=1787136800"
+  ],
+  "description_html": null,
+  "regular_price": null,
+  "item_number": "44260-3001",
+  "discount_percent": null,
+  "main_image": "https://kitenatura.com/cdn/shop/files/44260-3001_1.jpg?v=1787136801",
+  "on_sale": false,
+  "breadcrumbs_jsonld": [
+    "Collections",
+    "Duotone Kiteboarding",
+    "Duotone Vegas 2026"
+  ],
+  "currency": "EUR",
+  "category": "Kites",
+  "variant_count": 7,
+  "price_max": 2219.0,
+  "sku": "9010583339580",
+  "category_url": "https://kitenatura.com/collections/kites-1",
+  "selected_variant_id": "53821055861069",
+  "brand": "Duotone Kiteboarding",
+  "url": "https://kitenatura.com/collections/kites-1/products/dtk-vegas-2026"
+}

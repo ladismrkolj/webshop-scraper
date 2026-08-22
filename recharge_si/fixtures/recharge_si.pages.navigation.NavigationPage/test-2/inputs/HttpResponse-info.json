@@ -1,0 +1,40 @@
+{
+  "url": "https://www.recharge.si/windsurf/jadra",
+  "status": 200,
+  "headers": {
+    "Server": [
+      "nginx"
+    ],
+    "Date": [
+      "Thu, 20 Aug 2026 13:20:53 GMT"
+    ],
+    "Content-Type": [
+      "text/html; charset=UTF-8"
+    ],
+    "Vary": [
+      "Accept-Encoding"
+    ],
+    "Set-Cookie": [
+      "hasNewGoogleConsent=true"
+    ],
+    "Expires": [
+      "Thu, 19 Nov 1981 08:52:00 GMT"
+    ],
+    "Cache-Control": [
+      "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
+    ],
+    "Pragma": [
+      "no-cache"
+    ],
+    "X-Powered-By": [
+      "SIEL.NINJA"
+    ],
+    "Link": [
+      "<https://www.recharge.si/windsurf/jadra>; rel=\"canonical\""
+    ],
+    "Strict-Transport-Security": [
+      "max-age=31536000; includeSubDomains"
+    ]
+  },
+  "_encoding": "utf-8"
+}

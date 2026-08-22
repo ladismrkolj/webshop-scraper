@@ -1,0 +1,91 @@
+{
+  "url": "https://kitenatura.com",
+  "status": 200,
+  "headers": {
+    "Content-Length": [
+      "74864"
+    ],
+    "Date": [
+      "Thu, 20 Aug 2026 13:46:57 GMT"
+    ],
+    "Content-Type": [
+      "text/html; charset=utf-8"
+    ],
+    "X-Permitted-Cross-Domain-Policies": [
+      "none"
+    ],
+    "Cf-Cache-Status": [
+      "DYNAMIC"
+    ],
+    "Set-Cookie": [
+      "_shopify_essential=:AaAfbMSBAAEAOHtOnOrHMQfgx6ZRqMHyubsUNvKKtnfmMO8cWrElTJpFQhqqD_OUpD5JdiMAJfQUkDYOSd4eVeKFGR7tL7-lsLk5RrXnwcBxGxgW91_yQaIHNIiiKEXcuTc3tYrnPLGpVKl8uMAIRHErPmle8G-mMVOmCO3TmfehLwVXEuT-AztkQFhOXeNyvhhwv8na97mYqLn8R6B62Wn5OlwQhH2ACm-xGrOjHbIcKP1xkglhQqwXzia6Ti8EnzUWoq2oHt62dpKaQCwCyz2azptD6OjCAhCNuc6r0R0Wyo13-_5KbfJzkNOtxZaQkGvljvmwd_TDQ3388trUnSp7NaPDZ5gWKKImOKuTGtOX-rERTH0t0BF32IKp0ovL_HWf9LLmmQj9rqEGaGHVLmiDrD7z44JstdphaefnYb4l_XINtrgSMotRYG61v5TGyN5Hi_rZhyQ3ZX8zYXZUuEN7rZ1l-BL8-jEdQywTIcN2ftOhjT3njoKWocaB2o1afDAQfVlNG8PTugC06lEthIoZPrA1lCxugwfmipLXapQf1SpIoPkDV0f_5Q:; Max-Age=31536000; Path=/; HttpOnly; Secure; Priority=High; SameSite=Lax"
+    ],
+    "Link": [
+      "<https://cdn.shopify.com>; rel=\"preconnect\", <https://cdn.shopify.com>; rel=\"preconnect\"; crossorigin, <https://cs.iubenda.com>; rel=\"preconnect\", <//kitenatura.com/cdn/shop/t/4/assets/theme.css?v=125433647014908592721786986963>; as=\"style\"; rel=\"preload\", <//kitenatura.com/cdn/shop/t/4/assets/ripple.css?v=100240391239311985871786986963>; as=\"style\"; rel=\"preload\", <//cs.iubenda.com/sync/4108740.js>; as=\"script\"; rel=\"preload\", <https://cdn.shopify.com/extensions/019d7141-8817-7e81-9717-e419047210ff/shopify-app-template-php-79/assets/consent-tracking.js>; as=\"script\"; rel=\"preload\", <https://kitenatura.com/cdn/shopifycloud/portable-wallets/latest/accelerated-checkout-backwards-compat.css>; as=\"style\"; rel=\"preload\"; crossorigin"
+    ],
+    "Speculation-Rules": [
+      "\"/cdn/shopifycloud/storefront/assets/storefront/storefronts.moderate.specrules-eb468f32.json\""
+    ],
+    "Etag": [
+      "\"page_cache:83363823949:IndexController:485899dae9c2d2affb6a6c08debe0bfb:03d523da4455284b4d98e90e680f5e27\""
+    ],
+    "Nel": [
+      "{\"report_to\":\"cf-nel\",\"success_fraction\":0.01,\"max_age\":604800}"
+    ],
+    "Shopify-Complexity-Score": [
+      "0"
+    ],
+    "Shopify-Complexity-Score-V2": [
+      "292"
+    ],
+    "X-Frame-Options": [
+      "DENY"
+    ],
+    "Content-Security-Policy": [
+      "block-all-mixed-content; frame-ancestors 'none'; upgrade-insecure-requests;"
+    ],
+    "Strict-Transport-Security": [
+      "max-age=7889238"
+    ],
+    "X-Dc": [
+      "gcp-europe-west1,gcp-europe-west1,gcp-europe-west1"
+    ],
+    "Vary": [
+      "accept-encoding"
+    ],
+    "Alt-Svc": [
+      "h3=\":443\"; ma=86400"
+    ],
+    "Content-Language": [
+      "en-SI"
+    ],
+    "Powered-By": [
+      "Shopify"
+    ],
+    "Server-Timing": [
+      "processing;dur=297;desc=\"gc:15\", db;dur=67, render;dur=160, asn;desc=\"5603\", edge;desc=\"MXP\", country;desc=\"SI\", theme;desc=\"194623177037\", pageType;desc=\"index\", servedBy;desc=\"hn27\", requestID;desc=\"39b546ca-567f-43e3-8265-2b3b021407d9-1787233616\", _y;desc=\"00000000-0000-0000-5000-000000000000\", _s;desc=\"00000000-0000-0000-5000-000000000000\", _cmp;desc=\"3.ampS_SI061_t_f_MDol54H4QPKKtzFfMlS46Q\", compressionLevel;desc=\"5\", compressionTime;dur=13.067"
+    ],
+    "X-Download-Options": [
+      "noopen"
+    ],
+    "Server": [
+      "cloudflare"
+    ],
+    "X-Xss-Protection": [
+      "1; mode=block"
+    ],
+    "X-Request-Id": [
+      "39b546ca-567f-43e3-8265-2b3b021407d9-1787233616"
+    ],
+    "Report-To": [
+      "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=CHDqH%2FKuGQ5LDpGwgjm%2FkPJ6KpqWQ%2BQSvkaBVE9A9sXCSSEcTATV7FSZe3PMAl17EtsNGKfBaBakcq6xgJI4PYpILvUgNgDtkYf1PRtV9ypFc9QRhIMj5SM7LQ3o26Cw\"}]}"
+    ],
+    "X-Content-Type-Options": [
+      "nosniff"
+    ],
+    "Cf-Ray": [
+      "a2e1d8da2a706db2-MXP"
+    ]
+  },
+  "_encoding": "utf-8"
+}

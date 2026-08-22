@@ -1,0 +1,37 @@
+{
+  "url": "https://easy-surfshop.com",
+  "status": 200,
+  "headers": {
+    "Content-Length": [
+      "47656"
+    ],
+    "Date": [
+      "Thu, 20 Aug 2026 13:44:13 GMT"
+    ],
+    "Server": [
+      "Apache"
+    ],
+    "Set-Cookie": [
+      "JSESSIONID=32A53E9148E57BE21DF75B714BC0F2A2; Path=/; Secure; HttpOnly"
+    ],
+    "Pragma": [
+      "No-cache"
+    ],
+    "Cache-Control": [
+      "no-cache,no-store,max-age=0"
+    ],
+    "Expires": [
+      "Thu, 01 Jan 1970 00:00:00 GMT"
+    ],
+    "Link": [
+      "</assets/v/ec-all.min.css?v=20260820070105>; rel=preload; as=style; fetchpriority=high, </assets/v/ec-app.js?v=20260820070105>; rel=preload; as=script; fetchpriority=high, </gfx/logo.png>; rel=preload; as=image; fetchpriority=high"
+    ],
+    "Vary": [
+      "Accept-Encoding"
+    ],
+    "Content-Type": [
+      "text/html;charset=utf-8"
+    ]
+  },
+  "_encoding": "utf-8"
+}

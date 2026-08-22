@@ -19,22 +19,23 @@ _ZYTE_API_USER_AGENT = f"scraping-agent-skills {ZAPI_USER_AGENT}"
 
 ZYTE_API_TRANSPARENT_MODE = False
 
-# Unlike the other shops in this repo, gong-galaxy.com sits behind an anti-bot
-# layer: a plain Scrapy request gets a "Verifying your connection..." interstitial
-# and then 429, whatever User-Agent it sends. Crawling this shop therefore NEEDS
-# Zyte API — export ZYTE_API_KEY and the addon takes over every request. The page
-# objects parse ordinary raw HTML, so they are unaffected either way, and the
-# fixture tests run offline without a key.
+# gong-galaxy.com is the one shop here that cannot be crawled with plain Scrapy.
+# It discriminates on the client's TLS fingerprint, not on anything we send: at
+# the same moment, curl announcing itself as "python-httpx" gets 200 while httpx
+# announcing itself as "curl" gets 429. Scrapy's own handshake is refused on
+# every URL, robots.txt and the public products.json feed included.
+#
+# Its robots.txt does allow the paths this spider visits, so the block is
+# infrastructure rather than policy — but the only ways through are a service
+# that fetches on your behalf, or impersonating another client's TLS signature.
+# The first is supported here; the second is not something this project does.
+#
+# Export ZYTE_API_KEY to crawl. Without it the spider will collect 429s.
+# The page objects parse ordinary raw HTML, so the fixture tests run offline
+# with no key at all.
 if os.environ.get("ZYTE_API_KEY"):
     ADDONS["scrapy_zyte_api.Addon"] = 500
     ZYTE_API_TRANSPARENT_MODE = True
-
-# Kept for the no-Zyte case; on its own it does not get past the anti-bot layer.
-USER_AGENT = (
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/131.0.0.0 Safari/537.36"
-)
 
 ROBOTSTXT_OBEY = True
 CONCURRENT_REQUESTS_PER_DOMAIN = 1

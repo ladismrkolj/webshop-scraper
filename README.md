@@ -94,12 +94,25 @@ browser rendering:
 export ZYTE_API_KEY=your-key-here
 ```
 
-Most of these shops serve complete HTML over plain HTTP and need no key.
-**`gong_galaxy_com` is the exception**: gong-galaxy.com sits behind an anti-bot
-layer that answers a plain Scrapy request with a "Verifying your connection..."
-interstitial and then 429, whatever User-Agent it sends, so crawling it requires
-a Zyte API key. Its page objects parse ordinary raw HTML, so its fixture tests
-still run offline without one.
+Five of the six shops serve complete HTML over plain HTTP and need no key.
+
+**`gong_galaxy_com` is the exception and cannot be crawled with plain Scrapy.**
+gong-galaxy.com discriminates on the client's TLS fingerprint: at the same
+moment, curl announcing itself as `python-httpx` gets a 200 while httpx
+announcing itself as `curl` gets a 429. The User-Agent is irrelevant, and
+Scrapy's own handshake is refused on every URL — product pages, `robots.txt`,
+and the public `products.json` feed alike. Its `robots.txt` does allow the paths
+the spider visits, so this is infrastructure rather than stated policy, but the
+only remaining ways through are a service that fetches on your behalf or
+impersonating another client's TLS signature. This project does the former:
+
+```bash
+export ZYTE_API_KEY=your-key-here
+cd gong_galaxy_com && uv run scrapy crawl gong_galaxy_com -O products.json
+```
+
+Without a key the spider runs but collects 429s. Its page objects parse ordinary
+raw HTML, so its 104 fixture tests still pass offline with no key.
 
 ## Adding a shop
 

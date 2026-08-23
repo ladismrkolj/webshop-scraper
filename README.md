@@ -73,11 +73,15 @@ the spider name are always the same.
 ## Nightly run
 
 `nightly/` runs every shop once a night through a local
-[scrapyd](https://scrapyd.readthedocs.io/) and writes one CSV per shop:
+[scrapyd](https://scrapyd.readthedocs.io/) and writes one CSV per shop, stamped with the run's date and time so nothing is
+ever overwritten:
 
 ```
-nightly/output/2026-08-23/recharge_si.csv
+nightly/output/recharge_si_2026-08-23_023005.csv
 ```
+
+Every shop in one run shares a single timestamp, so a night's files sort
+together.
 
 Scrapyd runs the projects from eggs in a single environment, so `nightly/`
 pins the union of the shop projects' dependencies alongside the daemon.

@@ -4,7 +4,7 @@
 Deploys every shop project to a local scrapyd, schedules a full-shop crawl of
 each one, waits for them all to finish and leaves one CSV per shop behind:
 
-    nightly/output/2026-08-23/recharge_si.csv
+    nightly/output/recharge_si_2026-08-23_023005.csv
 
 Usage:
     python nightly.py deploy          # build + upload an egg per project
@@ -146,17 +146,18 @@ def cmd_run(args: argparse.Namespace) -> int:
         )
         return 2
 
-    run_date = dt.date.today().isoformat()
-    out_dir = (Path(args.output) if args.output else HERE / "output") / run_date
+    # One timestamp for the whole run, so a night's CSVs sort together and no
+    # run can ever overwrite an earlier one.
+    stamp = dt.datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    out_dir = Path(args.output) if args.output else HERE / "output"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     jobs: dict[str, tuple[str, Path]] = {}
     for project in args.project:
-        csv_path = out_dir / f"{project}.csv"
+        csv_path = out_dir / f"{project}_{stamp}.csv"
         feeds = {
             str(csv_path): {
                 "format": "csv",
-                "overwrite": True,
                 "fields": product_fields(project),
             }
         }

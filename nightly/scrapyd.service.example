@@ -1,0 +1,25 @@
+# Optional: run scrapyd as a service instead of letting run_nightly.sh start it.
+# Useful on a box that stays up, so the daemon survives a reboot and its web UI
+# is always reachable.
+#
+#   sudo cp scrapyd.service.example /etc/systemd/system/scrapyd.service
+#   sudo  $EDITOR /etc/systemd/system/scrapyd.service   # fix User and paths
+#   sudo systemctl daemon-reload && sudo systemctl enable --now scrapyd
+#   systemctl status scrapyd && journalctl -u scrapyd -f
+#
+# run_nightly.sh notices the daemon is already listening and leaves it alone.
+
+[Unit]
+Description=scrapyd for webshop-scraper
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=youruser
+WorkingDirectory=/home/youruser/webshop-scraper/nightly
+ExecStart=/home/youruser/.local/bin/uv run scrapyd
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

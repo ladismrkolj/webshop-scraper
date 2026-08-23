@@ -70,6 +70,46 @@ cd recharge_si && uv run scrapy crawl recharge_si -a product_url=https://www.rec
 Substitute the project/spider name for the other shops — the directory name and
 the spider name are always the same.
 
+## Nightly run
+
+`nightly/` runs every shop once a night through a local
+[scrapyd](https://scrapyd.readthedocs.io/) and writes one CSV per shop:
+
+```
+nightly/output/2026-08-23/recharge_si.csv
+```
+
+Scrapyd runs the projects from eggs in a single environment, so `nightly/`
+pins the union of the shop projects' dependencies alongside the daemon.
+
+```bash
+cd nightly && uv sync
+./run_nightly.sh          # start scrapyd if needed, redeploy, crawl, write CSVs
+```
+
+`run_nightly.sh` is what cron calls; see `nightly/crontab.example` for the
+entry (02:30 by default). The pieces are also usable on their own:
+
+```bash
+cd nightly
+uv run scrapyd                              # the daemon, on 127.0.0.1:6800
+uv run python nightly.py deploy             # build + upload an egg per project
+uv run python nightly.py run                # schedule all shops, wait, report
+uv run python nightly.py run --project recharge_si
+uv run python nightly.py status             # what is running right now
+```
+
+Each shop has its own item schema, so each gets its own CSV. The columns come
+from that project's `ProductItem` dataclass rather than from whatever the first
+scraped product happened to fill in, so the header is stable and complete.
+
+The default is the **five plain-HTTP shops** — `gong_galaxy_com` is left out,
+since without `ZYTE_API_KEY` it only collects 429s (see below). Run it with
+`--project gong_galaxy_com` once you have a key exported.
+
+Scrapyd's own logs land in `nightly/var/logs/<project>/`; `nightly/output/` and
+`nightly/var/` are untracked.
+
 ## Tests
 
 The fixtures under `fixtures/` are the regression suite. They replay saved

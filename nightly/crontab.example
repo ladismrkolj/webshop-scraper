@@ -1,0 +1,10 @@
+# Nightly full crawl of every shop, 02:30 local time.
+# Install with:  crontab -e   (adjust the path to your checkout)
+#
+# Output:  <checkout>/nightly/output/<YYYY-MM-DD>/<shop>.csv
+# Log:     <checkout>/nightly/var/nightly-cron.log
+#
+# ZYTE_API_KEY is optional; set it only if you also want gong_galaxy_com,
+# which is not part of the default five.
+
+30 2 * * * cd /path/to/webshop-scraper/nightly && ./run_nightly.sh >> var/nightly-cron.log 2>&1

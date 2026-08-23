@@ -1,0 +1,20 @@
+[project]
+name = "nightly"
+version = "0.0.1"
+description = "Scrapyd runner that crawls every shop once a night into CSV"
+requires-python = ">=3.13"
+dependencies = [
+    # the daemon and its deploy client
+    "scrapyd>=1.5",
+    "scrapyd-client>=2",
+    # union of what the shop projects import — scrapyd runs their eggs in *this*
+    # environment, so every project dependency has to be installed here too
+    "scrapy>=2.10",
+    "scrapy-poet>=0.26",
+    "scrapy-zyte-api[provider]>=0.17",
+    "web-poet>=0.21",
+    "itemadapter>=0.13",
+    "extruct>=0.18",
+    "price-parser>=0.3.4",
+    "jmespath>=1",
+]

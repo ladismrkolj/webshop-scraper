@@ -1,0 +1,68 @@
+/* CSV Product Sync — back office */
+
+.csvsync-section {
+	margin: 18px 0 10px;
+	font-weight: 600;
+}
+
+.csvsync-mapping td,
+.csvsync-categories td {
+	vertical-align: middle !important;
+}
+
+.csvsync-mapping .csvsync-sample {
+	color: #666;
+	font-size: 12px;
+	word-break: break-all;
+	max-width: 260px;
+}
+
+.csvsync-mapping .csvsync-feature-name {
+	margin-top: 6px;
+}
+
+.csvsync-mapping .csvsync-suggested {
+	margin: 4px 0 0;
+	font-size: 11px;
+	color: #00a1e0;
+}
+
+/* A mapped column the file no longer has: usually a scraper change. */
+.csvsync-mapping .csvsync-missing-column {
+	background: #fff8e1;
+}
+
+.csvsync-categories .csvsync-status-new {
+	background: #fff8e1;
+}
+
+.csvsync-categories .csvsync-status-ignored {
+	opacity: 0.6;
+}
+
+.csvsync-counters {
+	padding: 12px 0;
+	text-align: center;
+}
+
+.csvsync-counters .csvsync-count {
+	display: block;
+	font-size: 26px;
+	font-weight: 600;
+}
+
+.csvsync-preview-row {
+	padding: 0 15px 10px;
+	border-bottom: 1px solid #eee;
+}
+
+.csvsync-preview-row .csvsync-category-row td {
+	background: #f7fbff;
+}
+
+.csvsync-log,
+.csvsync-cron {
+	white-space: pre-wrap;
+	word-break: break-all;
+	background: #f5f5f5;
+}

@@ -4,6 +4,11 @@
 # Output:  <checkout>/nightly/output/<YYYY-MM-DD>/<shop>.csv
 # Log:     <checkout>/nightly/var/nightly-cron.log
 #
+# run_nightly.sh locates uv itself (cron's PATH is only /usr/bin:/bin, and uv
+# lives in ~/.local/bin). If yours is installed somewhere unusual, either set
+# UV_BIN_DIR to its directory or add a PATH line above the schedule:
+#   PATH=/usr/local/bin:/usr/bin:/bin
+#
 # ZYTE_API_KEY is optional; set it only if you also want gong_galaxy_com,
 # which is not part of the default five.
 

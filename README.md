@@ -138,7 +138,10 @@ crontab -e
 ```
 
 `run_nightly.sh` starts scrapyd itself if it is not already listening, so cron
-is the only thing that needs to be running for the nightly crawl to happen.
+is the only thing that needs to be running for the nightly crawl to happen. It
+also finds `uv` on its own — cron's `PATH` is just `/usr/bin:/bin`, which does
+not include the `~/.local/bin` uv installs into. If uv lives somewhere unusual
+on your box, set `UV_BIN_DIR` to its directory.
 On a box that stays up, you may prefer scrapyd as a service instead — see
 `nightly/scrapyd.service.example`.
 

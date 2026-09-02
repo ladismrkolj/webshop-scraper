@@ -1,11 +1,29 @@
 #!/usr/bin/env bash
 # One night's work: make sure scrapyd is up, redeploy every shop project, crawl
-# them all, write one CSV per shop under nightly/output/<date>/.
+# them all, write one timestamped CSV per shop under nightly/output/.
 #
 # This is what cron calls. Safe to run by hand at any time.
 set -euo pipefail
 
 cd "$(dirname "$0")"
+
+# cron runs with a bare PATH (/usr/bin:/bin), so uv — which installs into
+# ~/.local/bin — is not on it. Find it and put its directory on PATH, so both
+# this script and the `uv` that nightly.py shells out to for deploys resolve.
+if ! command -v uv >/dev/null 2>&1; then
+    for candidate in "${UV_BIN_DIR:-/nonexistent}/uv" "$HOME/.local/bin/uv" /usr/local/bin/uv /opt/uv/bin/uv "$HOME/.cargo/bin/uv"; do
+        if [ -x "$candidate" ]; then
+            PATH="$(dirname "$candidate"):$PATH"
+            export PATH
+            break
+        fi
+    done
+fi
+if ! command -v uv >/dev/null 2>&1; then
+    echo "[nightly] uv not found on PATH ($PATH)." >&2
+    echo "[nightly] Install it (https://astral.sh/uv) or set UV_BIN_DIR to the directory holding it." >&2
+    exit 127
+fi
 
 mkdir -p var/logs output
 

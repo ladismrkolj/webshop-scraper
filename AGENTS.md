@@ -3,7 +3,7 @@
 ## Project Overview
 We are building a daily automated product import pipeline. 
 1. `scraper-app/` uses Python & Scrapy to extract daily competitor product listings and dump them to a structured JSON file.
-2. `prestashop-product-import/` is a custom PHP module that registers a server cron job to parse that JSON file and programmatically create/update products in the PrestaShop catalog daily.
+2. `prestashop-product-import/` is a custom PHP module that registers a server cron job to parse that JSON file and programmatically create/update products in the PrestaShop 9.x catalog daily.
 
 ## 🧠 Model Token-Saving Hierarchy
 - **Claude Code (The Architect):** 
@@ -26,7 +26,7 @@ Before Claude presents any completed code diff to the user, the models must auto
   - Command: `cd scraper-app && scrapy check`
 
 ### 🐘 BACKEND 2: `prestashop-product-import/` (PHP/PrestaShop)
-- **Format & Lint:** Code must strictly comply with PrestaShop's `PHP-CS-Fixer` standards.
+- **Format & Lint:** Code must strictly comply with PrestaShop's 9.x `PHP-CS-Fixer` standards.
   - Command: `cd prestashop-plugin && ./vendor/bin/php-cs-fixer fix --dry-run`
 - **Unit Testing:** We use `PHPUnit` to test the JSON ingestion and product parsing logic.
   - Command: `cd prestashop-plugin && ./vendor/bin/phpunit`

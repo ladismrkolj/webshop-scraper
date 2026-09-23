@@ -46,3 +46,5 @@
 }());
 </script>
 {/literal}
+
+{include file='./preview.tpl'}

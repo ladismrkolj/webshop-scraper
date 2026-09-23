@@ -1,6 +1,6 @@
 # Product Import: sources and base-product imports
 
-Steps 2–4: source configuration, JSON fetching, mapping expressions, filters, category/manufacturer resolution base-product upserts, and real combinations. No preview endpoint or cron orchestration is implemented.
+Steps 2–5: source configuration, JSON fetching, mapping expressions, filters, category/manufacturer resolution base-product upserts, and real combinations. Read-only preview is available; cron orchestration is not implemented.
 
 ## Development
 
@@ -59,3 +59,19 @@ Attribute groups/values are global and reused by exact BINARY name matches acros
 `ProductImageAttacher` now owns the existing download/Image/thumbnail/cleanup logic and returns the new image ID. Both importers reuse it. Combination images use `Combination::setImages([$idImage])`, associating the image specifically via the combination API rather than only adding a product gallery image. Failures are logged and do not abort the combination; failed new images are removed. Setting a supplied image replaces that combination's image associations. As in step 3, repeated imports append gallery images; previous gallery images are not reconciled or deleted. Catalog changes and external linking remain nontransactional; imports should run serially.
 
 Unit tests cover VariantFieldMapper and retain all earlier tests. AttributeResolver, CombinationImporter and ExternalCombinationRepository are deliberately not tested against fake PrestaShop classes: their ObjectModel/SQL/stock/image/default behavior, along with the admin form, requires real PrestaShop integration verification. Combination/setAttributes/setImages and price-impact storage are implemented with high confidence in the legacy 1.7/8 API, but have not been executed here. Version-specific ProductAttribute naming and default-cache/multistore behavior deserve deployment review.
+
+## Read-only preview (step 5)
+
+The saved-source form offers a preview of either a zero-based item index fetched from the source or a pasted JSON object. Save configuration edits first. Unsaved sources cannot be previewed. Requests use the tokenized AdminPiSource URL with `ajax=1&action=preview`, routed explicitly from this controller's custom `postProcess()` to `ajaxProcessPreview()`. The endpoint checks view permission and the admin token, rejects missing/both input modes, catches failures and terminates with JSON. No importer, stock or image attachment code runs. Results are inserted using DOM textContent, not interpreted as HTML.
+
+PreviewBuilder receives decoded `field_mapping` and `variant_mapping` arrays (or null for no variant mapping); the HTTP caller decodes database JSON. Dependencies are constructor-injected. Results contain `filter`, `base` (values/errors), `categories`, `manufacturer`, `variants` (total/truncated/items), and stage-level `errors`. Mapping/filter failures remain visible; even excluded products are mapped to help diagnose configuration. Five variants are mapped at most; truncated variants are explicitly counted and are not individually evaluated. Null/empty attributes are reported as errors and not sent to the resolver.
+
+All three resolvers accept `bool $commit = true`. Existing commit-mode return values remain unchanged: category IDs, attribute IDs, manufacturer ID/null. With false:
+
+- CategoryResolver returns `{path, id_category, auto_create}` per path, reads overrides without upsertSeen, and walks existing children until the first missing segment. It never creates categories. Missing chains have null leaf ID and auto_create=true.
+- AttributeResolver returns nullable `id_attribute_group`/`id_attribute` plus `create_group`/`create_value`. Missing groups or values are reported without creation.
+- ManufacturerResolver returns `{name, id_manufacturer, auto_create}`, including a null/no-create result for an absent name. Its native return type is removed to support both shapes on PHP 7.2; PHPDoc documents the contract.
+
+There were no production resolver call sites before PreviewBuilder. The future import orchestrator can keep the original signatures/default true; ProductImporter and CombinationImporter still receive resolved IDs and are unchanged. Preview uses false explicitly in every resolver call. Module/catalog writes and seen-path tracking are bypassed; ordinary PrestaShop request/session infrastructure remains outside this module's control.
+
+PreviewBuilder tests use handwritten resolver doubles (asserting commit=false), real expression evaluation/mappers, and no fake PrestaShop bootstrap. Live resolver SQL, controller dispatch/permission handling and browser/Smarty rendering still need integration verification; the AJAX controller is intentionally not unit-tested.

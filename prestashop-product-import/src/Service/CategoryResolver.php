@@ -17,9 +17,9 @@ class CategoryResolver
 
     /**
      * @param list<list<string>> $normalizedPaths
-     * @return list<int>
+     * @return array Commit: list<int>; preview: list<{path, id_category, auto_create}>.
      */
-    public function resolve(array $normalizedPaths, int $idSource, ?int $rootCategoryId): array
+    public function resolve(array $normalizedPaths, int $idSource, ?int $rootCategoryId, bool $commit = true): array
     {
         $resolved = [];
         foreach ($normalizedPaths as $path) {
@@ -27,10 +27,12 @@ class CategoryResolver
                 continue;
             }
             $hash = $this->normalizer->hash($path);
-            $this->mappings->upsertSeen($idSource, $hash, json_encode($path));
+            if ($commit) {
+                $this->mappings->upsertSeen($idSource, $hash, json_encode($path));
+            }
             $override = $this->mappings->findOverride($idSource, $hash);
             if ($override !== null && $override['id_category'] !== null) {
-                $resolved[] = (int) $override['id_category'];
+                $resolved[] = $commit ? (int) $override['id_category'] : ['path' => $path, 'id_category' => (int) $override['id_category'], 'auto_create' => false];
                 continue;
             }
             $parent = $rootCategoryId ?? (int) \Configuration::get('PS_ROOT_CATEGORY');
@@ -38,15 +40,18 @@ class CategoryResolver
                 throw new \RuntimeException('Category root does not exist.');
             }
             foreach ($path as $segment) {
-                $parent = $this->resolveChild($parent, $segment);
+                $parent = $this->resolveChild($parent, $segment, $commit);
+                if ($parent === null) {
+                    break;
+                }
             }
-            $resolved[] = $parent;
+            $resolved[] = $commit ? $parent : ['path' => $path, 'id_category' => $parent, 'auto_create' => $parent === null];
         }
 
         return $resolved;
     }
 
-    private function resolveChild(int $parent, string $name): int
+    private function resolveChild(int $parent, string $name, bool $commit): ?int
     {
         $id = \Db::getInstance()->getValue(
             'SELECT c.`id_category` FROM `' . _DB_PREFIX_ . 'category` c'
@@ -57,6 +62,9 @@ class CategoryResolver
         );
         if ($id !== false) {
             return (int) $id;
+        }
+        if (!$commit) {
+            return null;
         }
         $category = new \Category();
         $category->id_parent = $parent;

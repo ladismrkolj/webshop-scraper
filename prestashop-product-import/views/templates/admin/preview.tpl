@@ -1,98 +1,15 @@
 <div id="pi-preview" data-url="{$pi_preview_url|escape:'html':'UTF-8'}" data-source="{$pi_preview_id|intval}">
-  <h3>Preview saved source</h3>
-  <p>Save configuration changes first. Preview reads catalog data but does not create or update records. Only the first five variants are shown.</p>
+  <h3>Test source</h3>
+  <p>Test the URL or file path entered above, even before saving. For saved sources, discovery uses the saved category and manufacturer expressions. Raw JSON chooses the inspected item; the URL/file is still fetched for connectivity and discovery.</p>
   <label>Input mode <select class="pi-mode"><option value="index">Source item index</option><option value="raw">Pasted JSON object</option></select></label>
   <label>Item index <input class="pi-index" type="number" min="0" value="0"></label>
   <label>JSON object <textarea class="pi-raw" rows="5"></textarea></label>
-  <button type="button" class="btn btn-default pi-preview-button" {if !$pi_preview_id}disabled{/if}>Preview</button>
-  <button type="button" class="btn btn-default pi-inspect-button" {if !$pi_preview_id}disabled{/if}>Inspect sample item</button>
+  <button type="button" class="btn btn-default pi-test-source">Test source</button>
+  <div class="pi-source-results" aria-live="polite"></div>
+  <h3>Test configuration</h3>
+  <p>Save changes first. Tests the saved filter, mappings and resolutions without writing catalog data. Uses the same item controls above; at most five variants are shown.</p>
+  <button type="button" class="btn btn-default pi-preview-button" {if !$pi_preview_id}disabled{/if}>Test configuration</button>
+  {if !$pi_preview_id}<p>Save the source to enable Test configuration.</p>{/if}
   {if $pi_preview_id}<p><a href="{$pi_category_url|escape:'html':'UTF-8'}">Category mappings →</a> | <a href="{$pi_manufacturer_url|escape:'html':'UTF-8'}">Brand mappings →</a></p>{/if}
-  {if $pi_can_discover}<button type="button" class="btn btn-default pi-discover-button" {if !$pi_preview_id}disabled{/if}>Discover categories from full JSON</button>{/if}
-  <div class="pi-results" aria-live="polite"></div>
+  <div class="pi-config-results" aria-live="polite"></div>
 </div>
-{literal}
-<script>
-(function () {
-  var panel = document.getElementById('pi-preview');
-  var button = panel.querySelector('.pi-preview-button');
-  var results = panel.querySelector('.pi-results');
-  function section(title, value) {
-    var heading = document.createElement('h4');
-    heading.textContent = title;
-    results.appendChild(heading);
-    var table = document.createElement('table');
-    table.className = 'table';
-    Object.keys(value || {}).forEach(function (key) {
-      var row = table.insertRow();
-      row.insertCell().textContent = key;
-      var pre = document.createElement('pre');
-      pre.textContent = JSON.stringify(value[key], null, 2);
-      row.insertCell().appendChild(pre);
-    });
-    results.appendChild(table);
-  }
-  function mapping(title, data) {
-    var rows = {};
-    Object.keys(data.values).forEach(function (key) {
-      rows[key] = {value: data.values[key], error: data.errors[key] || null};
-    });
-    Object.keys(data.errors).forEach(function (key) {
-      if (!Object.prototype.hasOwnProperty.call(rows, key)) rows[key] = {error: data.errors[key]};
-    });
-    section(title, rows);
-  }
-  function request(action, clicked) {
-    clicked.disabled = true;
-    results.textContent = 'Loading preview…';
-    var body = new URLSearchParams();
-    body.set('ajax', '1');
-    body.set('action', action);
-    body.set('id_source', panel.dataset.source);
-    if (action !== 'discoverCategories') {
-    if (panel.querySelector('.pi-mode').value === 'raw') body.set('raw_item', panel.querySelector('.pi-raw').value);
-    else body.set('item_index', panel.querySelector('.pi-index').value);
-    }
-    fetch(panel.dataset.url, {method: 'POST', credentials: 'same-origin', body: body})
-      .then(function (response) { return response.json(); })
-      .then(function (data) {
-        results.textContent = '';
-        if (data.error) { section('Error', {error: data.error}); return; }
-        if (action === 'inspect') {
-          var pre = document.createElement('pre');
-          pre.textContent = data.json;
-          results.appendChild(pre);
-          section('Available fields', data.fields);
-          if (data.truncated) section('Display limits', {notice: 'Flattening limited to depth 4, 3 entries per array, and 100 rows. Full JSON is shown above.'});
-          return;
-        }
-        if (action === 'discoverCategories') {
-          section('Discovery results', data);
-          var link = document.createElement('a');
-          link.href = data.mapping_url;
-          link.textContent = 'Open category mappings';
-          results.appendChild(link);
-          return;
-        }
-        section('Filter', data.filter);
-        mapping('Base fields', data.base);
-        section('Category paths (auto_create means would create)', data.categories);
-        section('Manufacturer (auto_create means would create)', data.manufacturer);
-        section('Errors', data.errors);
-        section('Variants', {total: data.variants.total, truncated: data.variants.truncated});
-        data.variants.items.forEach(function (variant) {
-          mapping('Variant ' + variant.index + ' fields', variant.fields);
-          mapping('Variant ' + variant.index + ' attributes', variant.attributes);
-          section('Attribute resolution (create_group/create_value means would create)', variant.resolutions);
-        });
-      })
-      .catch(function (error) { results.textContent = 'Preview failed: ' + error.message; })
-      .then(function () { clicked.disabled = false; });
-  }
-  button.addEventListener('click', function () { request('preview', button); });
-  var inspect = panel.querySelector('.pi-inspect-button');
-  inspect.addEventListener('click', function () { request('inspect', inspect); });
-  var discover = panel.querySelector('.pi-discover-button');
-  if (discover) discover.addEventListener('click', function () { request('discoverCategories', discover); });
-}());
-</script>
-{/literal}

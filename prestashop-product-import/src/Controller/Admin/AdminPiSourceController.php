@@ -384,7 +384,23 @@ class AdminPiSourceController extends ModuleAdminController
                 $rows[] = ['target' => $target, 'expression' => $expression];
             }
         }
-        $this->context->smarty->assign('pi_mapping_rows', $rows ?: [['target' => '', 'expression' => '']]);
+        $canonical = ['name', 'reference', 'price', 'short_description', 'description', 'ean13', 'weight', 'quantity', 'active', 'manufacturer', 'category_paths', 'images', 'main_image'];
+        $fixed = [];
+        foreach ($canonical as $target) {
+            $fixed[$target] = ['target' => $target, 'expression' => '', 'badge' => $target === 'name' ? 'Required for new products' : (in_array($target, ['reference', 'price', 'category_paths', 'images'], true) ? 'Recommended' : 'Optional')];
+        }
+        $custom = [];
+        $assigned = [];
+        foreach ($rows as $row) {
+            if (isset($fixed[$row['target']]) && !isset($assigned[$row['target']])) {
+                $fixed[$row['target']]['expression'] = $row['expression'];
+                $assigned[$row['target']] = true;
+            } else {
+                // Preserve custom rows and invalid duplicate submissions for correction.
+                $custom[] = $row;
+            }
+        }
+        $this->context->smarty->assign(['pi_fixed_rows' => $fixed, 'pi_mapping_rows' => $custom]);
         $variant = $this->submittedVariant ?? json_decode($source['variant_mapping'] ?: '{}', true);
         $variant = is_array($variant) ? $variant : [];
         $variantFields = [];
@@ -399,6 +415,7 @@ class AdminPiSourceController extends ModuleAdminController
             'pi_variant_field_rows' => $variant['field_rows'] ?? $variantFields,
         ]);
         $this->context->smarty->assign(['pi_manufacturer_url' => $this->context->link->getAdminLink('AdminPiManufacturerMap') . '&id_source=' . $id, 'pi_category_url' => $this->context->link->getAdminLink('AdminPiCategoryMap') . '&id_source=' . $id, 'pi_can_discover' => $this->access('edit'), 'pi_preview_id' => $id, 'pi_preview_url' => $this->context->link->getAdminLink('AdminPiSource')]);
+        $testHtml = $this->context->smarty->fetch(dirname(__DIR__, 3) . '/views/templates/admin/preview.tpl');
         $mappingHtml = $this->context->smarty->fetch(dirname(__DIR__, 3) . '/views/templates/admin/source_form.tpl');
         $helpTemplate = $this->context->smarty->createTemplate(dirname(__DIR__, 3) . '/views/templates/admin/source_form.tpl');
         $helpTemplate->assign('pi_help_section', 'identifier');
@@ -410,8 +427,12 @@ class AdminPiSourceController extends ModuleAdminController
             'name' => 'Name', 'technical_key' => 'Technical key', 'json_url' => 'JSON URL',
             'json_file_path' => 'JSON file path', 'identifier_field' => 'Identifier field',
         ] as $name => $label) {
+            if ($name === 'identifier_field') {
+                $inputs[] = ['type' => 'html', 'name' => 'source_test', 'html_content' => $testHtml];
+                $inputs[] = ['type' => 'html', 'name' => 'identifier_picker', 'label' => $this->trans('Identifier source field'), 'html_content' => '<select id="pi-identifier-picker" disabled aria-label="Identifier source field"><option value="">Run Test source above to populate</option></select><p class="help-block">Choose a top-level JSON key. The raw identifier below stays editable.</p>'];
+            }
             $inputs[] = [
-                'type' => 'text', 'label' => $this->trans($label), 'name' => $name,
+                'type' => 'text', 'label' => $this->trans($label), 'name' => $name, 'id' => $name,
                 'required' => in_array($name, ['name', 'technical_key'], true),
                 'desc' => $name === 'identifier_field' ? $identifierHelp : '',
             ];

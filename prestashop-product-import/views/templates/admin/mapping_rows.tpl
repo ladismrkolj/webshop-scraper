@@ -17,5 +17,5 @@
       {/foreach}
     </tbody>
   </table>
-  <button type="button" class="btn btn-default pi-add-row">Add row</button>
+  <button type="button" class="btn btn-default pi-add-row">{if isset($add_label)}{$add_label|escape:'html':'UTF-8'}{else}Add row{/if}</button>
 </div>

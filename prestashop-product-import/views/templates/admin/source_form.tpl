@@ -1,30 +1,33 @@
 {if isset($pi_help_section) && $pi_help_section == 'identifier'}
-The JSON key that uniquely identifies a product (for example product_id or sku), so re-imports update it instead of creating duplicates. Leave blank until you use "Inspect sample item" below to see available JSON fields, then fill it in before running a real import.
+The JSON key that uniquely identifies a product (for example product_id or sku), so re-imports update it instead of creating duplicates. Leave blank until you use "Test source" above to see available JSON fields, then fill it in before running a real import.
 {elseif isset($pi_help_section) && $pi_help_section == 'filter'}
 Optional filter. Examples to adapt to your JSON (not defaults):<br>
 Only selected categories: <code>path(fields, 'breadcrumbs.0.title') in ['Windsurf', 'Sails', 'Boards']</code><br>
 Only below a price threshold: <code>num(fields['price']) &lt; 100</code><br>
 Exclude one brand: <code>fields['brand'] != 'Nike'</code>
 {else}
-{include file='./preview.tpl'}
-<div class="pi-mapping-editor">
-  <p class="help-block">Target fields: name, reference, price, short_description, description, ean13, weight, quantity, active, manufacturer, category_paths, images, main_image.</p>
-  <p class="help-block">category_paths: a list of paths, each containing strings or title dictionaries; for scraper breadcrumbs use [path(fields, 'breadcrumbs')]. images: a list of URL strings. main_image: optional cover URL, defaults to the first image.</p>
-  <table class="table">
-    <thead><tr><th>Target field</th><th>Expression</th><th></th></tr></thead>
-    <tbody>
-      {foreach from=$pi_mapping_rows item=row}
-        <tr>
-          <td><input type="text" name="field_mapping_target[]" aria-label="Target field" value="{$row.target|escape:'html':'UTF-8'}"></td>
-          <td><textarea name="field_mapping_expression[]" aria-label="Expression" rows="3">{$row.expression|escape:'html':'UTF-8'}</textarea></td>
-          <td><button type="button" class="btn btn-default pi-remove-row">Remove</button></td>
-        </tr>
-      {/foreach}
-    </tbody>
-  </table>
-  <button type="button" class="pi-add-row btn btn-default">Add row</button>
-  <p class="help-block">Use fields as the JSON item, for example: num(path(fields, 'price')).</p>
+<div id="pi-fixed-mappings">
+  <p class="help-block">Choose a source field to replace an expression, or select a field to insert at the cursor. Expressions are always editable; blank rows are not saved.</p>
+  <p class="help-block">category_paths expects a list of paths, for example [fields['breadcrumbs']]. images expects a list of URLs; main_image defaults to its first entry. Container fields are included in the selectors.</p>
+  {foreach from=$pi_fixed_rows item=row}
+  <div class="panel pi-fixed-row" data-target="{$row.target|escape:'html':'UTF-8'}">
+    <label for="pi-expression-{$row.target|escape:'html':'UTF-8'}">{$row.target|escape:'html':'UTF-8'}</label>
+    <span class="badge">{$row.badge|escape:'html':'UTF-8'}</span>
+    <input class="pi-fixed-target" type="hidden" name="field_mapping_target[]" value="{if $row.expression != ''}{$row.target|escape:'html':'UTF-8'}{/if}">
+    <label>Source field (replace expression)
+      <select class="pi-source-field" disabled><option value="">Run Test source above to populate</option></select>
+    </label>
+    <label>Insert field at cursor
+      <select class="pi-insert-field" disabled><option value="">Run Test source above to populate</option></select>
+    </label>
+    <button type="button" class="btn btn-default pi-insert-button" disabled>+ Insert</button>
+    <textarea id="pi-expression-{$row.target|escape:'html':'UTF-8'}" name="field_mapping_expression[]" rows="3">{$row.expression|escape:'html':'UTF-8'}</textarea>
+  </div>
+  {/foreach}
 </div>
+<h3>Custom fields</h3>
+<p class="help-block">Use custom rows for targets outside the fixed list above.</p>
+{include file='./mapping_rows.tpl' rows=$pi_mapping_rows prefix='field_mapping' heading='Custom target field' add_label='+ Add custom field'}
 <h3>Optional combinations</h3>
 <label for="pi-variants-expression">Variants expression</label>
 <input id="pi-variants-expression" type="text" name="variants_expression" value="{$pi_variants_expression|escape:'html':'UTF-8'}">
@@ -35,6 +38,7 @@ Exclude one brand: <code>fields['brand'] != 'Nike'</code>
 {literal}
 <script>
 (function () {
+  function initRows() {
   Array.prototype.forEach.call(document.querySelectorAll('.pi-mapping-editor'), function (editor) {
   var body = editor.querySelector('tbody');
   var prototype = body.querySelector('tr').cloneNode(true);
@@ -52,7 +56,11 @@ Exclude one brand: <code>fields['brand'] != 'Nike'</code>
     }
   });
   });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initRows);
+  else initRows();
 }());
 </script>
 {/literal}
+{include file='./source_editor_script.tpl'}
 {/if}

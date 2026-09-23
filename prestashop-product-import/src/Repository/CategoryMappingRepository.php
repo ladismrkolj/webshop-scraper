@@ -4,6 +4,15 @@ namespace ProductImport\Repository;
 
 class CategoryMappingRepository
 {
+    public function findAllForSource(int $idSource): array
+    {
+        $rows = \Db::getInstance()->executeS('SELECT * FROM `' . _DB_PREFIX_ . 'pi_category_mapping` WHERE `id_source` = ' . (int) $idSource . ' ORDER BY `id_mapping`');
+        if ($rows === false) {
+            throw new \RuntimeException('Unable to list category mappings.');
+        }
+        return $rows;
+    }
+
     public function findOverride(int $idSource, string $hash): ?array
     {
         $row = \Db::getInstance()->getRow(

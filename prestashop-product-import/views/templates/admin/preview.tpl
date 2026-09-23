@@ -5,6 +5,9 @@
   <label>Item index <input class="pi-index" type="number" min="0" value="0"></label>
   <label>JSON object <textarea class="pi-raw" rows="5"></textarea></label>
   <button type="button" class="btn btn-default pi-preview-button" {if !$pi_preview_id}disabled{/if}>Preview</button>
+  <button type="button" class="btn btn-default pi-inspect-button" {if !$pi_preview_id}disabled{/if}>Inspect sample item</button>
+  {if $pi_preview_id}<p><a href="{$pi_category_url|escape:'html':'UTF-8'}">Category mappings</a></p>{/if}
+  {if $pi_can_discover}<button type="button" class="btn btn-default pi-discover-button" {if !$pi_preview_id}disabled{/if}>Discover categories from full JSON</button>{/if}
   <div class="pi-results" aria-live="polite"></div>
 </div>
 {literal}
@@ -38,20 +41,38 @@
     });
     section(title, rows);
   }
-  button.addEventListener('click', function () {
-    button.disabled = true;
+  function request(action, clicked) {
+    clicked.disabled = true;
     results.textContent = 'Loading preview…';
     var body = new URLSearchParams();
     body.set('ajax', '1');
-    body.set('action', 'preview');
+    body.set('action', action);
     body.set('id_source', panel.dataset.source);
+    if (action !== 'discoverCategories') {
     if (panel.querySelector('.pi-mode').value === 'raw') body.set('raw_item', panel.querySelector('.pi-raw').value);
     else body.set('item_index', panel.querySelector('.pi-index').value);
+    }
     fetch(panel.dataset.url, {method: 'POST', credentials: 'same-origin', body: body})
       .then(function (response) { return response.json(); })
       .then(function (data) {
         results.textContent = '';
         if (data.error) { section('Error', {error: data.error}); return; }
+        if (action === 'inspect') {
+          var pre = document.createElement('pre');
+          pre.textContent = data.json;
+          results.appendChild(pre);
+          section('Available fields', data.fields);
+          if (data.truncated) section('Display limits', {notice: 'Flattening limited to depth 4, 3 entries per array, and 100 rows. Full JSON is shown above.'});
+          return;
+        }
+        if (action === 'discoverCategories') {
+          section('Discovery results', data);
+          var link = document.createElement('a');
+          link.href = data.mapping_url;
+          link.textContent = 'Open category mappings';
+          results.appendChild(link);
+          return;
+        }
         section('Filter', data.filter);
         mapping('Base fields', data.base);
         section('Category paths (auto_create means would create)', data.categories);
@@ -65,8 +86,13 @@
         });
       })
       .catch(function (error) { results.textContent = 'Preview failed: ' + error.message; })
-      .then(function () { button.disabled = false; });
-  });
+      .then(function () { clicked.disabled = false; });
+  }
+  button.addEventListener('click', function () { request('preview', button); });
+  var inspect = panel.querySelector('.pi-inspect-button');
+  inspect.addEventListener('click', function () { request('inspect', inspect); });
+  var discover = panel.querySelector('.pi-discover-button');
+  if (discover) discover.addEventListener('click', function () { request('discoverCategories', discover); });
 }());
 </script>
 {/literal}

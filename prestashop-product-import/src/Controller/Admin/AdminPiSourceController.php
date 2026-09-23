@@ -24,9 +24,10 @@ class AdminPiSourceController extends ModuleAdminController
 
     public function postProcess()
     {
-        // This controller bypasses the parent's CRUD dispatcher, so forward preview explicitly.
-        if ($this->ajax && Tools::getValue('action') === 'preview') {
-            $this->ajaxProcessPreview();
+        $actions = ['preview' => 'ajaxProcessPreview', 'inspect' => 'ajaxProcessInspect', 'discoverCategories' => 'ajaxProcessDiscoverCategories'];
+        $action = Tools::getValue('action');
+        if ($this->ajax && is_string($action) && isset($actions[$action])) {
+            $this->{$actions[$action]}();
             return;
         }
         $saving = Tools::isSubmit('submitAddpi_source');
@@ -78,31 +79,7 @@ class AdminPiSourceController extends ModuleAdminController
             if (!$source) {
                 throw new InvalidArgumentException('Save a source before previewing it.');
             }
-            $hasIndex = Tools::getIsset('item_index');
-            $hasRaw = Tools::getIsset('raw_item');
-            if ($hasIndex === $hasRaw) {
-                throw new InvalidArgumentException('Provide exactly one of item_index or raw_item.');
-            }
-            if ($hasRaw) {
-                $raw = Tools::getValue('raw_item');
-                if (!is_string($raw) || substr(ltrim($raw), 0, 1) !== '{') {
-                    throw new InvalidArgumentException('raw_item must be a JSON object.');
-                }
-                $item = json_decode($raw, true);
-                if (json_last_error() !== JSON_ERROR_NONE || !is_array($item)) {
-                    throw new InvalidArgumentException('Invalid JSON object: ' . json_last_error_msg());
-                }
-            } else {
-                $index = Tools::getValue('item_index');
-                if (!is_string($index) || !ctype_digit($index)) {
-                    throw new InvalidArgumentException('item_index must be a non-negative integer.');
-                }
-                $items = (new \ProductImport\Service\JsonFetcher())->fetch($source['json_url'], $source['json_file_path']);
-                if (!array_key_exists((int) $index, $items) || !is_array($items[(int) $index])) {
-                    throw new InvalidArgumentException('No product object at that index.');
-                }
-                $item = $items[(int) $index];
-            }
+            $item = $this->sampleItem($source);
             foreach (['field_mapping', 'variant_mapping'] as $column) {
                 if ($column === 'variant_mapping' && empty($source[$column])) {
                     $source[$column] = null;
@@ -133,6 +110,104 @@ class AdminPiSourceController extends ModuleAdminController
         die($json === false ? '{"error":"Unable to encode preview response."}' : $json);
     }
 
+    private function sampleItem(array $source): array
+    {
+        $hasIndex = Tools::getIsset('item_index');
+        $hasRaw = Tools::getIsset('raw_item');
+        if ($hasIndex === $hasRaw) {
+            throw new InvalidArgumentException('Provide exactly one of item_index or raw_item.');
+        }
+        if ($hasRaw) {
+            $raw = Tools::getValue('raw_item');
+            if (!is_string($raw) || substr(ltrim($raw), 0, 1) !== '{') {
+                throw new InvalidArgumentException('raw_item must be a JSON object.');
+            }
+            $item = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($item)) {
+                throw new InvalidArgumentException('Invalid JSON object: ' . json_last_error_msg());
+            }
+        } else {
+            $index = Tools::getValue('item_index');
+            if (!is_string($index) || !ctype_digit($index)) {
+                throw new InvalidArgumentException('item_index must be a non-negative integer.');
+            }
+            $items = (new \ProductImport\Service\JsonFetcher())->fetch($source['json_url'], $source['json_file_path']);
+            if (!array_key_exists((int) $index, $items) || !is_array($items[(int) $index])) {
+                throw new InvalidArgumentException('No product object at that index.');
+            }
+            $item = $items[(int) $index];
+        }
+        return $item;
+    }
+
+    public function ajaxProcessInspect()
+    {
+        try {
+            $source = $this->requireSource('view');
+            $result = (new \ProductImport\Service\FieldInspector())->inspect($this->sampleItem($source));
+        } catch (Throwable $error) {
+            $result = ['error' => $error->getMessage()];
+        }
+        $this->sendJson($result);
+    }
+
+    public function ajaxProcessDiscoverCategories()
+    {
+        try {
+            $source = $this->requireSource('edit');
+            $mapping = json_decode($source['field_mapping'], true, 512, JSON_THROW_ON_ERROR);
+            $expression = $mapping['category_paths'] ?? null;
+            if (!is_string($expression) || trim($expression) === '') {
+                throw new InvalidArgumentException('Save a category_paths expression before discovery.');
+            }
+            $items = (new \ProductImport\Service\JsonFetcher())->fetch($source['json_url'], $source['json_file_path']);
+            $evaluator = new \ProductImport\Service\ExpressionEvaluator();
+            $normalizer = new \ProductImport\Service\CategoryPathNormalizer();
+            $paths = [];
+            $failed = 0;
+            $errors = [];
+            foreach ($items as $index => $item) {
+                try {
+                    if (!is_array($item)) {
+                        throw new InvalidArgumentException('Item is not an object.');
+                    }
+                    foreach ($normalizer->normalize($evaluator->evaluate($expression, ['fields' => $item])) as $path) {
+                        $paths[$normalizer->hash($path)] = $path;
+                    }
+                } catch (Throwable $error) {
+                    ++$failed;
+                    if (count($errors) < 20) {
+                        $errors[] = 'Item ' . $index . ': ' . mb_substr($error->getMessage(), 0, 500);
+                    }
+                }
+            }
+            (new \ProductImport\Service\CategoryResolver(new \ProductImport\Repository\CategoryMappingRepository(), $normalizer))->discover(array_values($paths), (int) $source['id_source']);
+            $result = ['unique_paths' => count($paths), 'items_scanned' => count($items), 'failed_items' => $failed, 'errors' => $errors,
+                'errors_omitted' => max(0, $failed - count($errors)), 'mapping_url' => $this->context->link->getAdminLink('AdminPiCategoryMap') . '&id_source=' . (int) $source['id_source']];
+        } catch (Throwable $error) {
+            $result = ['error' => $error->getMessage()];
+        }
+        $this->sendJson($result);
+    }
+
+    private function requireSource(string $permission): array
+    {
+        if (!$this->access($permission) || !$this->checkToken()) {
+            throw new RuntimeException('Permission denied or invalid security token.');
+        }
+        $source = $this->sources->find((int) Tools::getValue('id_source'));
+        if (!$source) {
+            throw new InvalidArgumentException('Save a source first.');
+        }
+        return $source;
+    }
+
+    private function sendJson(array $result): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        die(json_encode($result, JSON_INVALID_UTF8_SUBSTITUTE) ?: '{"error":"Unable to encode response"}');
+    }
+
     public function initContent()
     {
         // Render explicitly: there is no source ObjectModel for AdminController to load.
@@ -142,7 +217,11 @@ class AdminPiSourceController extends ModuleAdminController
                 $this->content = $this->renderForm();
             }
         } elseif ($this->access('view')) {
-            $this->content = $this->renderList();
+            if ($this->access('add')) {
+                $url = $this->context->link->getAdminLink('AdminPiSource') . '&addpi_source';
+                $this->content .= '<p><a class="btn btn-default" href="' . Tools::safeOutput($url) . '">+ ' . Tools::safeOutput($this->trans('Add source')) . '</a></p>';
+            }
+            $this->content .= $this->renderList();
         }
         $this->setTemplate('content.tpl');
         $this->context->smarty->assign([
@@ -167,16 +246,14 @@ class AdminPiSourceController extends ModuleAdminController
                 $helper->actions[] = $action;
             }
         }
-        if ($this->access('add')) {
-            $helper->toolbar_btn['new'] = [
-                'href' => $this->context->link->getAdminLink('AdminPiSource') . '&addpi_source',
-                'desc' => $this->trans('Add source'),
-            ];
-        }
-
         $cronUrl = $this->context->link->getModuleLink('productimport', 'cron', ['token' => Configuration::get('PIIMPORT_CRON_TOKEN')], true);
         $banner = '<div class="alert alert-info">Daily cron URL: <code>' . Tools::safeOutput($cronUrl) . '</code></div>';
-        return $banner . $helper->generateList($this->sources->findAll(), [
+        $sources = $this->sources->findAll();
+        foreach ($sources as $source) {
+            $url = $this->context->link->getAdminLink('AdminPiCategoryMap') . '&id_source=' . (int) $source['id_source'];
+            $banner .= '<p>' . Tools::safeOutput($source['name']) . ': <a href="' . Tools::safeOutput($url) . '">Category mappings</a></p>';
+        }
+        return $banner . $helper->generateList($sources, [
             'name' => ['title' => $this->trans('Name')],
             'technical_key' => ['title' => $this->trans('Technical key')],
             'active' => ['title' => $this->trans('Active'), 'type' => 'bool'],
@@ -222,7 +299,7 @@ class AdminPiSourceController extends ModuleAdminController
             }, $variant['attributes'] ?? []),
             'pi_variant_field_rows' => $variant['field_rows'] ?? $variantFields,
         ]);
-        $this->context->smarty->assign(['pi_preview_id' => $id, 'pi_preview_url' => $this->context->link->getAdminLink('AdminPiSource')]);
+        $this->context->smarty->assign(['pi_category_url' => $this->context->link->getAdminLink('AdminPiCategoryMap') . '&id_source=' . $id, 'pi_can_discover' => $this->access('edit'), 'pi_preview_id' => $id, 'pi_preview_url' => $this->context->link->getAdminLink('AdminPiSource')]);
         $mappingHtml = $this->context->smarty->fetch(dirname(__DIR__, 3) . '/views/templates/admin/source_form.tpl');
         $inputs = [];
         foreach ([

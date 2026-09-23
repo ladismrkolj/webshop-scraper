@@ -2,6 +2,23 @@
 
 Steps 2–6: source configuration, JSON fetching, mapping expressions, filters, category/manufacturer resolution, base-product upserts, and real combinations. Read-only preview and a secret-token cron endpoint are available.
 
+## Getting started: configuring your first source
+
+1. **Catalog → Product Import → "+ Add source"**.
+2. Fill in the required fields:
+   - **Name** — any label.
+   - **Technical key** — a lowercase slug (letters/numbers/`_`/`-`), unique across sources.
+   - **JSON URL** or **JSON file path** — exactly one. A URL is fetched over HTTP(S) at import time; a file path is read directly from disk on the PrestaShop server (e.g. useful if the scraper and PrestaShop share a filesystem/volume).
+   - **Identifier field** — the JSON key that uniquely identifies a product within this source (e.g. `product_id`, `sku`, `url`). Re-imports match on this value to update instead of duplicate.
+3. **Save the source once with just those fields filled in** — the mapping/inspect/discover tools below all need a saved `id_source` to work against.
+4. Click **"Inspect sample item"** (defaults to item index 0) to see exactly what fields your JSON actually has, with real example values, e.g. `breadcrumbs[0].title → "Windsurf"`. Use this to decide what expressions to write — no need to go dig through raw JSON externally. Bump the item index or switch to pasting a raw JSON object if item 0 isn't representative.
+5. Fill in **Field mapping** rows: each row is `target field → expression`. The canonical target fields are `name`, `reference`, `price`, `short_description`, `description`, `ean13`, `weight`, `quantity`, `active`, `manufacturer`, `category_paths`, `images`, `main_image` — see "Base-product targets and source options" below for exactly what each does. Every expression sees the whole item as `fields` (e.g. `fields['name']`, `num(fields['price'])`) — see "Expressions" below for the full helper-function list.
+6. If your source has product variants (size/color/etc.), fill in **Optional combinations** — see "Combinations" below.
+7. **Save again.**
+8. Click **"Preview"** to run one real item through the whole pipeline (filter → mapping → category/manufacturer resolution) without writing anything to the database, and confirm the resolved values look right.
+9. If you mapped `category_paths`, click **"Discover categories from full JSON"** — this scans *every* item in the source (not just the preview one) and records every unique category path it finds, without creating anything. Then follow the "Open category mappings" link to see the full list and, for any path, override "auto-create" with an existing store category via the dropdown. Paths left as "auto-create" get a fresh category chain created for them automatically the first time a real import needs them.
+10. Once satisfied, either wait for the daily cron (URL shown at the top of the source list — set up your server's scheduler to hit it once a day, see "Daily cron and run logs" below) or trigger it manually by opening that URL yourself to run a real import now.
+
 ## Development
 
 Run from this directory:
@@ -153,10 +170,26 @@ module validator/marketplace before install, not afterward), but don't be
 surprised if a live install leaves your working tree's `config.xml`
 looking modified; just don't commit that regenerated copy.
 
-One UI gap found, not yet fixed: the "Add source" toolbar button doesn't
-render on the source list page in PS9's redesigned admin theme (likely a
-`HelperList` toolbar-button rendering change in PS9's Symfony-wrapped
-legacy pages — not investigated further). Workaround: navigate directly
-to `index.php?controller=AdminPiSource&addpi_source` (the add form itself
-renders and saves correctly; only the list page's shortcut link is
-missing).
+**Fixed as of 0.7.0, verified live**: the missing "Add source" button.
+`HelperList`'s own toolbar rendering doesn't produce anything on this
+controller in PS9's admin theme (confirmed via `document.querySelectorAll`
+against the real rendered DOM — no `.panel-heading`/`.toolbar` element at
+all, not CSS-hidden), so the list page now renders its own plain "+ Add
+source" link instead of relying on it — see "Source configuration tools"
+below.
+
+## Source configuration tools (0.7.0)
+
+Upgrade the installed module to 0.7.0 through the module manager before opening Category mappings. `upgrade/upgrade-0.7.0.php` registers the new source-specific hidden admin tab without resetting existing configuration or imported data. Fresh installations register it directly; uninstall removes it.
+
+The source list renders its own Add source button, with an explicit add-permission check and a tokenized `getAdminLink('AdminPiSource') . '&addpi_source'` URL. It does not rely on HelperList toolbar rendering. Each source has a Category mappings link; the edit page has the same link and a Discover categories button.
+
+Discovery requires a saved source and saved category_paths expression. It fetches every item, evaluates only that expression (no import filter or other mappings), normalizes paths, deduplicates by normalized hash in memory, and records each unique path once after the scan. There are no per-item database queries. It creates no categories and preserves existing overrides. The response shows unique paths found in this scan, scanned/failed item counts, up to 20 error examples (500 characters each), and a link to the mapping page. Previously discovered paths remain listed; discovery is additive. Preview remains strictly read-only.
+
+The mapping page shows every discovered path and its current override. Each row has an indented category select and Save mapping button; an empty value restores auto-create. Categories come from one read joining category, category_shop and category_lang for the current shop/admin language, ordered by nleft. Both active and inactive categories are offered. Missing translations use an unnamed label. The page avoids Category::getNestedCategories API/version differences and per-row tree widgets. Edits check the admin token, edit permission, source/path ownership, and selected category availability in the current shop.
+
+Inspect sample item sits above the mapping rows and shares Preview's item-index/raw-paste controls. It requires a saved source but no mapping expressions and runs no filter/resolver/importer. FieldInspector returns complete pretty JSON plus a flattened list: depth 4 from the root, first 3 entries per list at every level, maximum 100 rows. Containers at the depth limit become count summaries; a truncated flag indicates any omitted rows. Identifier-style object keys use dots, array indices use brackets, unusual keys use JSON-quoted brackets. Empty arrays are accepted as empty objects at the root because associative JSON decoding loses that distinction. Scalar/nonempty list roots are rejected. Inspection output uses textContent, never HTML interpretation.
+
+New unit tests cover FieldInspector only. Discovery, repository queries, mapping-page rendering/saving, tab upgrades and controller dispatch are intentionally not tested with fake PrestaShop objects.
+
+**Verified live against real PrestaShop 9.1.5, all working**: `php bin/console prestashop:module upgrade productimport` registered the new hidden `AdminPiCategoryMap` tab correctly. The "+ Add source" button renders and links to a working add form. "Inspect sample item" returns correct pretty JSON and a correctly-flattened field list (e.g. `breadcrumbs[0].title` → `"Windsurf"`) for a real saved source. "Discover categories from full JSON" scanned a real 3-item fixture, found 1 unique path, 0 errors, and the "Open category mappings" link took me straight to the new mapping page. Setting an override there (path → an existing "Home" category via the indented `<select>`) saved correctly and the page reflected "→ existing category #2 (— Home #2)" afterward.

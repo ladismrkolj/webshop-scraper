@@ -12,7 +12,7 @@ class ProductImport extends Module
     {
         $this->name = 'productimport';
         $this->tab = 'administration';
-        $this->version = '0.6.0';
+        $this->version = '0.7.0';
         $this->author = 'Product Import';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -101,12 +101,12 @@ class ProductImport extends Module
         if (!Configuration::updateValue('PIIMPORT_CRON_TOKEN', bin2hex(random_bytes(20)))) {
             return false;
         }
-        foreach (['AdminPiSource' => 'Product Import', 'AdminPiRunLog' => 'Product Import runs'] as $class => $title) {
+        foreach (['AdminPiSource' => 'Product Import', 'AdminPiRunLog' => 'Product Import runs', 'AdminPiCategoryMap' => 'Category mappings'] as $class => $title) {
             $tab = new Tab();
             $tab->active = 1;
             $tab->class_name = $class;
             $tab->module = $this->name;
-            $tab->id_parent = (int) Tab::getIdFromClassName('AdminCatalog');
+            $tab->id_parent = $class === 'AdminPiCategoryMap' ? -1 : (int) Tab::getIdFromClassName('AdminCatalog');
             foreach (Language::getLanguages(false) as $language) {
                 $tab->name[(int) $language['id_lang']] = $title;
             }
@@ -124,7 +124,7 @@ class ProductImport extends Module
                 return false;
             }
         }
-        foreach (['AdminPiRunLog', 'AdminPiSource'] as $class) {
+        foreach (['AdminPiCategoryMap', 'AdminPiRunLog', 'AdminPiSource'] as $class) {
             $idTab = (int) Tab::getIdFromClassName($class);
             if ($idTab && !(new Tab($idTab))->delete()) {
                 return false;

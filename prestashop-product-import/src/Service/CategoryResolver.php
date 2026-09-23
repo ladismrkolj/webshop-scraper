@@ -51,6 +51,16 @@ class CategoryResolver
         return $resolved;
     }
 
+    /** Record paths only: never look up overrides or create catalog categories. */
+    public function discover(array $normalizedPaths, int $idSource): void
+    {
+        foreach ($normalizedPaths as $path) {
+            if ($path !== []) {
+                $this->mappings->upsertSeen($idSource, $this->normalizer->hash($path), json_encode($path, JSON_THROW_ON_ERROR));
+            }
+        }
+    }
+
     private function resolveChild(int $parent, string $name, bool $commit): ?int
     {
         $id = \Db::getInstance()->getValue(

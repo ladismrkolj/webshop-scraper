@@ -1,0 +1,10 @@
+{
+  "name": "productimport/productimport",
+  "description": "Configurable JSON product import foundations for PrestaShop",
+  "type": "prestashop-module",
+  "license": "proprietary",
+  "require": {"php": ">=7.2.5", "ext-curl": "*", "ext-json": "*", "symfony/expression-language": "^5.4 || ^6.0 || ^7.0"},
+  "require-dev": {"phpunit/phpunit": "^13.0", "friendsofphp/php-cs-fixer": "^3.0"},
+  "autoload": {"psr-4": {"ProductImport\\": "src/"}},
+  "config": {"sort-packages": true}
+}

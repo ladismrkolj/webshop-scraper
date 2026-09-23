@@ -1,0 +1,5 @@
+[
+  {"product_id":"ES-101","name":"Freeride sail","price":249.5,"currency":"EUR","availability":"https://schema.org/InStock","breadcrumbs":[{"title":"Windsurf","url":"https://example.com/windsurf"},{"title":"Sails","url":"https://example.com/sails"}],"images":["https://example.com/sail.jpg"]},
+  {"sku":"ALT-2","title":"Touring board","cost":"599.95","available":false,"categories":["SUP","Boards"]},
+  {"product_id":"ES-103","name":"Spare fin","price":null,"availability":"https://schema.org/OutOfStock","breadcrumbs":[]}
+]

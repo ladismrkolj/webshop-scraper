@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module>
+  <name>productimport</name>
+  <displayName><![CDATA[Product Import]]></displayName>
+  <version>0.2.0</version>
+  <description><![CDATA[Configure JSON sources, filters and product field expressions.]]></description>
+  <author><![CDATA[Product Import]]></author>
+  <tab>Administration</tab>
+  <is_configurable>1</is_configurable>
+  <need_instance>0</need_instance>
+  <ps_versions_compliancy><min>1.7.0.0</min><max>8.99.99</max></ps_versions_compliancy>
+</module>

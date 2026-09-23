@@ -1,0 +1,192 @@
+<?php
+
+namespace ProductImport\Service;
+
+use ProductImport\Repository\ExternalProductRepository;
+
+class ProductImporter
+{
+    private $products;
+
+    public function __construct(ExternalProductRepository $products)
+    {
+        $this->products = $products;
+    }
+
+    public function import(
+        int $idSource,
+        string $externalId,
+        array $mappedValues,
+        array $categoryIds,
+        ?int $idManufacturer,
+        int $idLangDefault,
+        bool $priceTaxIncluded
+    ): int {
+        if ($externalId === '' || \Tools::strlen($externalId) > 191) {
+            throw new \InvalidArgumentException('External product ID must contain 1 to 191 characters.');
+        }
+        $id = $this->products->findProductId($idSource, $externalId);
+        $product = $id === null ? new \Product() : new \Product($id);
+        if ($id !== null && !\Validate::isLoadedObject($product)) {
+            throw new \RuntimeException('Linked product no longer exists: ' . $id);
+        }
+        $isNew = $id === null;
+        if ($isNew && trim((string) ($mappedValues['name'] ?? '')) === '') {
+            throw new \InvalidArgumentException('A name is required to create a product.');
+        }
+        foreach (['name' => 'name', 'description' => 'description', 'short_description' => 'description_short'] as $target => $property) {
+            if (isset($mappedValues[$target])) {
+                $translations = is_array($product->$property) ? $product->$property : [];
+                $translations[$idLangDefault] = (string) $mappedValues[$target];
+                $product->$property = $translations;
+            }
+        }
+        if (isset($mappedValues['name'])) {
+            $slugs = is_array($product->link_rewrite) ? $product->link_rewrite : [];
+            $slugs[$idLangDefault] = \Tools::link_rewrite((string) $mappedValues['name']) ?: 'product';
+            $product->link_rewrite = $slugs;
+        }
+        // ObjectModel requires name/link_rewrite in the shop default language too.
+        if ($isNew) {
+            $shopLanguage = (int) \Configuration::get('PS_LANG_DEFAULT');
+            $product->name[$shopLanguage] = $product->name[$shopLanguage] ?? $product->name[$idLangDefault];
+            $product->link_rewrite[$shopLanguage] = $product->link_rewrite[$shopLanguage] ?? $product->link_rewrite[$idLangDefault];
+            $product->id_shop_default = (int) \Context::getContext()->shop->id;
+        }
+        foreach (['reference', 'ean13'] as $field) {
+            if (isset($mappedValues[$field])) {
+                $product->$field = (string) $mappedValues[$field];
+            }
+        }
+        if (isset($mappedValues['price'])) {
+            if ($priceTaxIncluded) {
+                // TODO: Convert to tax-exclusive using the shop's configured tax rules group, not wired up yet.
+                // Until then this stores the mapped tax-included price unchanged in Product::price.
+            }
+            $product->price = (float) $mappedValues['price'];
+        }
+        $product->weight = (float) ($mappedValues['weight'] ?? 0.0);
+        $product->active = (bool) ($mappedValues['active'] ?? true);
+        if ($idManufacturer !== null) {
+            $product->id_manufacturer = $idManufacturer;
+        }
+        $categoryIds = array_values(array_unique(array_map('intval', $categoryIds)));
+        if ($categoryIds !== []) {
+            $product->id_category_default = $categoryIds[0];
+        } elseif ($isNew) {
+            $product->id_category_default = (int) \Configuration::get('PS_HOME_CATEGORY');
+        }
+        if (!$product->save()) {
+            throw new \RuntimeException('Unable to save product: ' . $externalId);
+        }
+        if ($categoryIds !== [] && !$product->updateCategories($categoryIds)) {
+            throw new \RuntimeException('Unable to update product categories: ' . $externalId);
+        }
+        if ($isNew && $categoryIds === [] && !$product->updateCategories([(int) $product->id_category_default])) {
+            throw new \RuntimeException('Unable to associate new product with its default category.');
+        }
+        if (isset($mappedValues['quantity'])) {
+            \StockAvailable::setQuantity((int) $product->id, 0, (int) $mappedValues['quantity']);
+        }
+        $this->importImages($product, $mappedValues);
+        $this->products->link($idSource, $externalId, (int) $product->id);
+
+        return (int) $product->id;
+    }
+
+    private function importImages(\Product $product, array $values): void
+    {
+        $urls = [];
+        foreach (is_array($values['images'] ?? null) ? $values['images'] : [] as $url) {
+            if (is_string($url) && trim($url) !== '') {
+                $urls[] = trim($url);
+            }
+        }
+        $main = is_string($values['main_image'] ?? null) ? trim($values['main_image']) : '';
+        $main = $main !== '' ? $main : ($urls[0] ?? '');
+        if ($main !== '') {
+            // Attempt the preferred cover first, including a standalone main_image.
+            array_unshift($urls, $main);
+        }
+        foreach (array_unique($urls) as $url) {
+            try {
+                $this->attachImage((int) $product->id, $url);
+            } catch (\Throwable $error) {
+                \PrestaShopLogger::addLog('Product import image skipped: ' . $error->getMessage(), 2, null, 'Product', (int) $product->id);
+            }
+        }
+    }
+
+    private function attachImage(int $idProduct, string $url): void
+    {
+        $temporary = tempnam(_PS_TMP_IMG_DIR_, 'pi_');
+        if ($temporary === false) {
+            throw new \RuntimeException('Unable to allocate image temporary file.');
+        }
+        $image = null;
+        try {
+            $this->downloadImage($url, $temporary);
+            $image = new \Image();
+            $image->id_product = $idProduct;
+            $image->position = (int) \Image::getHighestPosition($idProduct) + 1;
+            $image->cover = \Image::getCover($idProduct) ? null : true;
+            if (!$image->add()) {
+                throw new \RuntimeException('Unable to create product image record.');
+            }
+            $image->associateTo([(int) \Context::getContext()->shop->id]);
+            $path = $image->getPathForCreation();
+            if (!$path || !\ImageManager::resize($temporary, $path . '.jpg')) {
+                throw new \RuntimeException('Unable to write product image.');
+            }
+            foreach (\ImageType::getImagesTypes('products') as $type) {
+                if (!\ImageManager::resize($temporary, $path . '-' . stripslashes($type['name']) . '.jpg', (int) $type['width'], (int) $type['height'])) {
+                    throw new \RuntimeException('Unable to generate product image thumbnail.');
+                }
+            }
+        } catch (\Throwable $error) {
+            if ($image !== null && $image->id) {
+                $image->delete();
+            }
+            throw $error;
+        } finally {
+            unlink($temporary);
+        }
+    }
+
+    private function downloadImage(string $url, string $destination): void
+    {
+        if (!in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true)) {
+            throw new \RuntimeException('Image URL must use HTTP or HTTPS.');
+        }
+        $file = fopen($destination, 'wb');
+        if ($file === false) {
+            throw new \RuntimeException('Unable to open temporary image file.');
+        }
+        $handle = curl_init($url);
+        try {
+            if ($handle === false) {
+                throw new \RuntimeException('Unable to initialize image download.');
+            }
+            $protocolOption = defined('CURLOPT_PROTOCOLS_STR') ? constant('CURLOPT_PROTOCOLS_STR') : CURLOPT_PROTOCOLS;
+            $protocolValue = defined('CURLOPT_PROTOCOLS_STR') ? 'http,https' : CURLPROTO_HTTP | CURLPROTO_HTTPS;
+            curl_setopt_array($handle, [
+                CURLOPT_FILE => $file,
+                CURLOPT_CONNECTTIMEOUT => 30,
+                CURLOPT_TIMEOUT => 120,
+                $protocolOption => $protocolValue,
+            ]);
+            if (curl_exec($handle) === false) {
+                throw new \RuntimeException('Image download failed: ' . curl_error($handle));
+            }
+            $status = (int) curl_getinfo($handle, CURLINFO_HTTP_CODE);
+            if ($status < 200 || $status >= 300) {
+                throw new \RuntimeException('Image download returned HTTP ' . $status . '.');
+            }
+        } finally {
+            fclose($file);
+            if (is_resource($handle)) {
+                curl_close($handle);
+            }
+        }
+    }
+}

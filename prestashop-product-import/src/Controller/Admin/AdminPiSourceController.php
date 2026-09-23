@@ -123,6 +123,7 @@ class AdminPiSourceController extends AdminController
         $source += [
             'name' => '', 'technical_key' => '', 'json_url' => '', 'json_file_path' => '',
             'identifier_field' => '', 'filter_expression' => '', 'field_mapping' => '{}', 'active' => 1,
+            'root_category_id' => null, 'id_lang_default' => 1, 'price_tax_included' => 0, 'deactivate_missing' => 0,
         ];
         $mapping = json_decode($source['field_mapping'], true);
         $rows = $this->submittedMapping;
@@ -146,13 +147,33 @@ class AdminPiSourceController extends AdminController
         }
         $inputs[] = ['type' => 'textarea', 'label' => $this->l('Filter expression'), 'name' => 'filter_expression'];
         $inputs[] = ['type' => 'html', 'name' => 'mapping_rows', 'html_content' => $mappingHtml, 'label' => $this->l('Field mapping')];
+        $tree = new HelperTreeCategories('pi-root-category-tree', $this->l('Root category'));
+        $tree->setRootCategory((int) Configuration::get('PS_ROOT_CATEGORY'));
+        $tree->setInputName('root_category_id');
+        $tree->setUseCheckBox(false);
+        $tree->setUseSearch(true);
+        $tree->setSelectedCategories($source['root_category_id'] ? [(int) $source['root_category_id']] : []);
         $inputs[] = [
-            'type' => 'switch', 'name' => 'active', 'label' => $this->l('Active'), 'is_bool' => true,
-            'values' => [
-                ['id' => 'active_on', 'value' => 1, 'label' => $this->l('Yes')],
-                ['id' => 'active_off', 'value' => 0, 'label' => $this->l('No')],
-            ],
+            'type' => 'html', 'name' => 'root_category_tree', 'label' => $this->l('Root category'),
+            'html_content' => $tree->render() . '<button type="button" class="btn btn-default" onclick="document.querySelectorAll(&quot;[name=root_category_id]&quot;).forEach(function (input) { input.checked = false; });">Use shop root</button>',
+            'desc' => $this->l('Leave unselected to create category chains under the shop root category.'),
         ];
+        $inputs[] = [
+            'type' => 'select', 'name' => 'id_lang_default', 'label' => $this->l('Source language'),
+            'options' => ['query' => Language::getLanguages(false), 'id' => 'id_lang', 'name' => 'name'],
+        ];
+        foreach (['active' => 'Active', 'price_tax_included' => 'Prices include tax', 'deactivate_missing' => 'Deactivate missing products (reserved)'] as $field => $label) {
+            $inputs[] = [
+                'type' => 'switch', 'name' => $field, 'label' => $this->l($label), 'is_bool' => true,
+                'values' => [
+                    ['id' => $field . '_on', 'value' => 1, 'label' => $this->l('Yes')],
+                    ['id' => $field . '_off', 'value' => 0, 'label' => $this->l('No')],
+                ],
+                'desc' => $field === 'price_tax_included'
+                    ? $this->l('Tax conversion is not implemented yet: prices are currently stored unchanged.')
+                    : ($field === 'deactivate_missing' ? $this->l('Saved for future cron orchestration; currently has no effect.') : ''),
+            ];
+        }
         $helper = new HelperForm();
         $helper->table = $this->table;
         $helper->identifier = $this->identifier;
@@ -180,7 +201,19 @@ class AdminPiSourceController extends AdminController
             }
             $data[$field] = trim($value);
         }
-        $data['active'] = (int) (Tools::getValue('active') === '1');
+        foreach (['active', 'price_tax_included', 'deactivate_missing'] as $field) {
+            $data[$field] = (int) (Tools::getValue($field) === '1');
+        }
+        $root = Tools::getValue('root_category_id', '');
+        $language = Tools::getValue('id_lang_default', '1');
+        if (!is_string($root) || ($root !== '' && (!ctype_digit($root) || (int) $root <= 0))) {
+            throw new InvalidArgumentException('Invalid root category ID.');
+        }
+        if (!is_string($language) || !ctype_digit($language) || (int) $language <= 0) {
+            throw new InvalidArgumentException('Invalid source language ID.');
+        }
+        $data['root_category_id'] = $root === '' ? null : (int) $root;
+        $data['id_lang_default'] = (int) $language;
         $this->submittedSource = $data;
         $targets = Tools::getValue('field_mapping_target', []);
         $expressions = Tools::getValue('field_mapping_expression', []);
@@ -208,6 +241,13 @@ class AdminPiSourceController extends AdminController
                 throw new InvalidArgumentException('Duplicate mapping target: ' . $target);
             }
             $mapping[$target] = $expression;
+        }
+        if ($data['root_category_id'] !== null && !Validate::isLoadedObject(new Category($data['root_category_id']))) {
+            throw new InvalidArgumentException('Selected root category does not exist.');
+        }
+        $languageIds = array_map('intval', array_column(Language::getLanguages(false), 'id_lang'));
+        if (!in_array($data['id_lang_default'], $languageIds, true)) {
+            throw new InvalidArgumentException('Selected source language does not exist.');
         }
         foreach (['name' => 191, 'technical_key' => 64, 'identifier_field' => 191] as $field => $limit) {
             if ($data[$field] === '' || Tools::strlen($data[$field]) > $limit) {

@@ -41,7 +41,7 @@ class SourceRepository
                 throw new \InvalidArgumentException('Missing source property: ' . $required);
             }
         }
-        $data += ['active' => 1];
+        $data += ['active' => 1, 'root_category_id' => null, 'id_lang_default' => 1, 'price_tax_included' => 0, 'deactivate_missing' => 0];
         $assignments = $this->assignments($data);
         $now = pSQL(date('Y-m-d H:i:s'));
         $assignments[] = "`date_add` = '" . $now . "'";
@@ -85,8 +85,16 @@ class SourceRepository
             // Preserve expression operators and JSON/HTML content while escaping SQL.
             $assignments[] = '`' . $column . "` = '" . pSQL($data[$column], true) . "'";
         }
-        if (array_key_exists('active', $data)) {
-            $assignments[] = '`active` = ' . (int) (bool) $data['active'];
+        foreach (['active', 'price_tax_included', 'deactivate_missing'] as $column) {
+            if (array_key_exists($column, $data)) {
+                $assignments[] = '`' . $column . '` = ' . (int) (bool) $data[$column];
+            }
+        }
+        if (array_key_exists('root_category_id', $data)) {
+            $assignments[] = '`root_category_id` = ' . ($data['root_category_id'] === null ? 'NULL' : (int) $data['root_category_id']);
+        }
+        if (array_key_exists('id_lang_default', $data)) {
+            $assignments[] = '`id_lang_default` = ' . (int) $data['id_lang_default'];
         }
 
         return $assignments;

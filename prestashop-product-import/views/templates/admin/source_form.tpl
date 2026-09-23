@@ -1,4 +1,6 @@
 <div id="pi-mapping-editor">
+  <p class="help-block">Target fields: name, reference, price, short_description, description, ean13, weight, quantity, active, manufacturer, category_paths, images, main_image.</p>
+  <p class="help-block">category_paths: a list of paths, each containing strings or title dictionaries; for scraper breadcrumbs use [path(fields, 'breadcrumbs')]. images: a list of URL strings. main_image: optional cover URL, defaults to the first image.</p>
   <table class="table">
     <thead><tr><th>Target field</th><th>Expression</th><th></th></tr></thead>
     <tbody>

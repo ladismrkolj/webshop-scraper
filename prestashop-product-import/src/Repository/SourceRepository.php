@@ -6,9 +6,9 @@ class SourceRepository
 {
     private const STRING_COLUMNS = [
         'name', 'technical_key', 'json_url', 'json_file_path', 'identifier_field',
-        'filter_expression', 'field_mapping',
+        'filter_expression', 'field_mapping', 'variant_mapping',
     ];
-    private const NULLABLE_COLUMNS = ['json_url', 'json_file_path', 'filter_expression'];
+    private const NULLABLE_COLUMNS = ['json_url', 'json_file_path', 'filter_expression', 'variant_mapping'];
 
     public function findAll(): array
     {

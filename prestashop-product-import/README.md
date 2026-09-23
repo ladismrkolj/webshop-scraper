@@ -1,6 +1,6 @@
 # Product Import: sources and base-product imports
 
-Steps 2–3: source configuration, JSON fetching, mapping expressions, filters, category/manufacturer resolution and base-product upserts. No combinations, preview endpoint or cron orchestration are implemented.
+Steps 2–4: source configuration, JSON fetching, mapping expressions, filters, category/manufacturer resolution base-product upserts, and real combinations. No preview endpoint or cron orchestration is implemented.
 
 ## Development
 
@@ -18,7 +18,7 @@ Dependencies and tools stay in local `vendor/`. Runtime source uses PHP 7.2.5-co
 
 Package this directory as **`productimport/`** under PrestaShop's `modules/` directory, with production `vendor/` dependencies included. The checkout directory name `prestashop-product-import` is not the module's technical name. Install the module, then use Catalog > Product Import (or its Configure link).
 
-The legacy loader uses `controllers/admin/AdminPiSourceController.php`; this loads the global controller implementation in `src/Controller/Admin/`. Source records belong to the installation, not individual multistore shops. Uninstall removes all three module tables and the tab; imported catalog data remains.
+The legacy loader uses `controllers/admin/AdminPiSourceController.php`; this loads the global controller implementation in `src/Controller/Admin/`. Source records belong to the installation, not individual multistore shops. Uninstall removes all four module tables and the tab; imported catalog data remains.
 
 The editor accepts parallel target/expression rows, preserves failed submissions, rejects duplicate targets and requires a unique lowercase source slug and a URL or file path. Empty mapping rows are ignored. Expression validity is checked at evaluation time so an admin can save work in progress.
 
@@ -45,3 +45,17 @@ Catalog writes and external links are not a single transaction; a failure after 
 ## Verification boundaries
 
 Unit tests cover the four initial services plus CategoryPathNormalizer with temporary files and representative scraper fixtures. They deliberately do not exercise SourceRepository, AdminPiSourceController, CategoryResolver, ManufacturerResolver, ProductImporter, CategoryMappingRepository or ExternalProductRepository: these require real PrestaShop classes and a database. No fake PrestaShop mocks are used. Module install/uninstall, tab loading, permissions, form rendering, SQL behavior, category/manufacturer creation, product/stock updates, image APIs, and HTTP fetching need integration verification in a deployment environment. No PrestaShop core is included or downloaded.
+
+## Combinations (step 4)
+
+Optional source `variant_mapping` stores `variants_expression`, `attributes` (name/expression rows), and `fields` (target/expression map). An empty variants expression saves NULL and ignores the section. Configured variants require an attribute row and a reference field row; blank rows are ignored, incomplete/duplicate rows rejected. Expressions are not syntax-validated at save time. `VariantFieldMapper::variants($item, $expression)` evaluates the list once and rejects non-list or non-array entries. `mapAttributes($item, $variant, $definitions)` and `mapFields($item, $variant, $mapping)` both expose `fields` and `variant`, with per-entry failures recorded as null plus an error. Attribute values are string-coerced via the expression `str()` helper; null remains null. Callers must reject failed/empty required identity or attribute values before resolving/importing. The future orchestrator decides how to report these errors; no orchestration is added here.
+
+`CombinationImporter::import($idSource, $parentExternalId, $variantExternalId, $idProduct, $baseProductPrice, $mappedFields, $attributeIds)` upserts a real `Combination` (`product_attribute`, with shop fields in `product_attribute_shop`). The external key is exactly `parentExternalId . ':' . variantExternalId`, scoped by source, and must fit 191 characters. Callers must choose identifiers without ambiguous colon boundaries (e.g. `a:b` + `c` collides with `a` + `b:c`); the requested composition is not escaped or hashed. Existing links must refer to a valid combination of the supplied parent.
+
+Price is an impact: absolute variant price minus the supplied base product price, including negative impacts. Both prices must use the same tax basis; step 3's unimplemented tax conversion caveat still applies. Missing price preserves an existing impact (new ObjectModel defaults apply). Attribute links use `Combination::setAttributes($attributeIds)`; stock uses `StockAvailable::setQuantity($idProduct, $idCombination, $quantity)`. Combinations have no native `active` property: explicit false forces zero stock. This does not hide the combination or override the shop's allow-out-of-stock-ordering policy. Missing quantity preserves stock. The first imported combination becomes default when none exists; later imports preserve the existing default, even if unavailable. Non-default `default_on` is NULL. `Product::updateDefaultAttribute()` refreshes the parent's cached default.
+
+Attribute groups/values are global and reused by exact BINARY name matches across installed languages (case-sensitive, consistent with step 3). Group creation fills `name` and required `public_name`, uses `group_type = 'select'` and `is_color_group = false`. Values use `ProductAttribute` on PS 8, or legacy `Attribute` on PS 1.7; an ObjectModel check prevents accidentally instantiating PHP 8's built-in Attribute class. Names are filled in every installed language, matching the category resolver.
+
+`ProductImageAttacher` now owns the existing download/Image/thumbnail/cleanup logic and returns the new image ID. Both importers reuse it. Combination images use `Combination::setImages([$idImage])`, associating the image specifically via the combination API rather than only adding a product gallery image. Failures are logged and do not abort the combination; failed new images are removed. Setting a supplied image replaces that combination's image associations. As in step 3, repeated imports append gallery images; previous gallery images are not reconciled or deleted. Catalog changes and external linking remain nontransactional; imports should run serially.
+
+Unit tests cover VariantFieldMapper and retain all earlier tests. AttributeResolver, CombinationImporter and ExternalCombinationRepository are deliberately not tested against fake PrestaShop classes: their ObjectModel/SQL/stock/image/default behavior, along with the admin form, requires real PrestaShop integration verification. Combination/setAttributes/setImages and price-impact storage are implemented with high confidence in the legacy 1.7/8 API, but have not been executed here. Version-specific ProductAttribute naming and default-cache/multistore behavior deserve deployment review.

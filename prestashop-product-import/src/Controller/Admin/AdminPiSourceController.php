@@ -8,6 +8,7 @@ class AdminPiSourceController extends AdminController
     private $sources;
     private $submittedSource;
     private $submittedMapping;
+    private $submittedVariant;
 
     public function __construct()
     {
@@ -123,7 +124,7 @@ class AdminPiSourceController extends AdminController
         $source += [
             'name' => '', 'technical_key' => '', 'json_url' => '', 'json_file_path' => '',
             'identifier_field' => '', 'filter_expression' => '', 'field_mapping' => '{}', 'active' => 1,
-            'root_category_id' => null, 'id_lang_default' => 1, 'price_tax_included' => 0, 'deactivate_missing' => 0,
+            'variant_mapping' => null, 'root_category_id' => null, 'id_lang_default' => 1, 'price_tax_included' => 0, 'deactivate_missing' => 0,
         ];
         $mapping = json_decode($source['field_mapping'], true);
         $rows = $this->submittedMapping;
@@ -134,6 +135,19 @@ class AdminPiSourceController extends AdminController
             }
         }
         $this->context->smarty->assign('pi_mapping_rows', $rows ?: [['target' => '', 'expression' => '']]);
+        $variant = $this->submittedVariant ?? json_decode($source['variant_mapping'] ?: '{}', true);
+        $variant = is_array($variant) ? $variant : [];
+        $variantFields = [];
+        foreach ($variant['fields'] ?? [] as $target => $expression) {
+            $variantFields[] = ['target' => $target, 'expression' => $expression];
+        }
+        $this->context->smarty->assign([
+            'pi_variants_expression' => $variant['variants_expression'] ?? '',
+            'pi_attribute_rows' => $variant['attribute_rows'] ?? array_map(static function ($row) {
+                return ['target' => $row['name'], 'expression' => $row['expression']];
+            }, $variant['attributes'] ?? []),
+            'pi_variant_field_rows' => $variant['field_rows'] ?? $variantFields,
+        ]);
         $mappingHtml = $this->context->smarty->fetch(dirname(__DIR__, 3) . '/views/templates/admin/source_form.tpl');
         $inputs = [];
         foreach ([
@@ -215,6 +229,16 @@ class AdminPiSourceController extends AdminController
         $data['root_category_id'] = $root === '' ? null : (int) $root;
         $data['id_lang_default'] = (int) $language;
         $this->submittedSource = $data;
+        $variantExpression = Tools::getValue('variants_expression', '');
+        if (!is_string($variantExpression)) {
+            throw new InvalidArgumentException('Invalid variants expression.');
+        }
+        $this->submittedVariant = ['variants_expression' => trim($variantExpression), 'attribute_rows' => [], 'field_rows' => []];
+        $data['variant_mapping'] = null;
+        if (trim($variantExpression) !== '') {
+            $this->submittedVariant['attribute_rows'] = $this->readRows('variant_attribute');
+            $this->submittedVariant['field_rows'] = $this->readRows('variant_field');
+        }
         $targets = Tools::getValue('field_mapping_target', []);
         $expressions = Tools::getValue('field_mapping_expression', []);
         if (!is_array($targets) || !is_array($expressions) || array_keys($targets) !== array_keys($expressions)) {
@@ -241,6 +265,24 @@ class AdminPiSourceController extends AdminController
                 throw new InvalidArgumentException('Duplicate mapping target: ' . $target);
             }
             $mapping[$target] = $expression;
+        }
+        if ($this->submittedVariant['variants_expression'] !== '') {
+            $attributes = $this->rowsToMapping($this->submittedVariant['attribute_rows']);
+            $fields = $this->rowsToMapping($this->submittedVariant['field_rows']);
+            if ($attributes === [] || !isset($fields['reference'])) {
+                throw new InvalidArgumentException('Variants require at least one attribute and a reference field mapping.');
+            }
+            $definitions = [];
+            foreach ($attributes as $name => $expression) {
+                $definitions[] = ['name' => (string) $name, 'expression' => $expression];
+            }
+            $data['variant_mapping'] = json_encode([
+                'variants_expression' => $this->submittedVariant['variants_expression'],
+                'attributes' => $definitions, 'fields' => (object) $fields,
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            if ($data['variant_mapping'] === false) {
+                throw new InvalidArgumentException('Unable to encode variant mapping: ' . json_last_error_msg());
+            }
         }
         if ($data['root_category_id'] !== null && !Validate::isLoadedObject(new Category($data['root_category_id']))) {
             throw new InvalidArgumentException('Selected root category does not exist.');
@@ -278,5 +320,41 @@ class AdminPiSourceController extends AdminController
         }
 
         return $data;
+    }
+
+    private function readRows(string $prefix): array
+    {
+        $targets = Tools::getValue($prefix . '_target', []);
+        $expressions = Tools::getValue($prefix . '_expression', []);
+        if (!is_array($targets) || !is_array($expressions) || array_keys($targets) !== array_keys($expressions)) {
+            throw new InvalidArgumentException('Invalid variant mapping rows.');
+        }
+        $rows = [];
+        foreach ($targets as $index => $target) {
+            if (!is_string($target) || !is_string($expressions[$index])) {
+                throw new InvalidArgumentException('Variant mapping rows must contain strings.');
+            }
+            $rows[] = ['target' => $target, 'expression' => $expressions[$index]];
+        }
+
+        return $rows;
+    }
+
+    private function rowsToMapping(array $rows): array
+    {
+        $mapping = [];
+        foreach ($rows as $row) {
+            $target = trim($row['target']);
+            $expression = trim($row['expression']);
+            if ($target === '' && $expression === '') {
+                continue;
+            }
+            if ($target === '' || $expression === '' || array_key_exists($target, $mapping)) {
+                throw new InvalidArgumentException('Variant rows require a unique name/target and an expression.');
+            }
+            $mapping[$target] = $expression;
+        }
+
+        return $mapping;
     }
 }

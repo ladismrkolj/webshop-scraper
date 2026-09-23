@@ -2,7 +2,7 @@
 <module>
   <name>productimport</name>
   <displayName><![CDATA[Product Import]]></displayName>
-  <version>0.3.0</version>
+  <version>0.4.0</version>
   <description><![CDATA[Configure JSON sources, filters and product field expressions.]]></description>
   <author><![CDATA[Product Import]]></author>
   <tab>Administration</tab>

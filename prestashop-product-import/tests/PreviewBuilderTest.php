@@ -23,17 +23,19 @@ class PreviewBuilderTest extends TestCase
             {
             }
 
-            public function resolve(array $paths, int $source, ?int $root, bool $commit = true): array
+            public function resolve(array $paths, int $source, ?int $root, bool $commit = true, ?int $defaultId = null): array
             {
                 TestCase::assertFalse($commit);
+                TestCase::assertSame(23, $defaultId);
                 TestCase::assertSame(7, $source);
                 TestCase::assertSame(9, $root);
                 return [['path' => $paths[0], 'id_category' => null, 'auto_create' => true]];
             }
         };
         $manufacturers = new class () extends ManufacturerResolver {
-            public function resolve(?string $name, int $idSource, bool $commit = true)
+            public function resolve(?string $name, int $idSource, bool $commit = true, ?int $defaultId = null)
             {
+                TestCase::assertSame(24, $defaultId);
                 TestCase::assertSame(7, $idSource);
                 TestCase::assertFalse($commit);
                 if ($name === 'failure') {
@@ -50,7 +52,7 @@ class PreviewBuilderTest extends TestCase
             }
         };
         $builder = new PreviewBuilder(new ProductFilter($evaluator), new ProductFieldMapper($evaluator), new CategoryPathNormalizer(), $categories, $manufacturers, new VariantFieldMapper($evaluator), $attributes);
-        return $builder->build($source + ['id_source' => 7, 'root_category_id' => 9, 'field_mapping' => []], $item);
+        return $builder->build($source + ['id_source' => 7, 'root_category_id' => 9, 'default_id_category' => 23, 'default_id_manufacturer' => 24, 'field_mapping' => []], $item);
     }
 
     public function testAssemblesFieldsAndReadOnlyResolutions(): void

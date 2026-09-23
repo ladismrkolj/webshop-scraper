@@ -90,6 +90,11 @@ class SourceRepository
                 $assignments[] = '`' . $column . '` = ' . (int) (bool) $data[$column];
             }
         }
+        foreach (['default_id_category', 'default_id_manufacturer'] as $column) {
+            if (array_key_exists($column, $data)) {
+                $assignments[] = '`' . $column . '` = ' . ($data[$column] === null ? 'NULL' : (int) $data[$column]);
+            }
+        }
         if (array_key_exists('root_category_id', $data)) {
             $assignments[] = '`root_category_id` = ' . ($data['root_category_id'] === null ? 'NULL' : (int) $data['root_category_id']);
         }

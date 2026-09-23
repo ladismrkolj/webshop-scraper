@@ -6,7 +6,7 @@
   <label>JSON object <textarea class="pi-raw" rows="5"></textarea></label>
   <button type="button" class="btn btn-default pi-preview-button" {if !$pi_preview_id}disabled{/if}>Preview</button>
   <button type="button" class="btn btn-default pi-inspect-button" {if !$pi_preview_id}disabled{/if}>Inspect sample item</button>
-  {if $pi_preview_id}<p><a href="{$pi_category_url|escape:'html':'UTF-8'}">Category mappings</a></p>{/if}
+  {if $pi_preview_id}<p><a href="{$pi_category_url|escape:'html':'UTF-8'}">Category mappings →</a> | <a href="{$pi_manufacturer_url|escape:'html':'UTF-8'}">Brand mappings →</a></p>{/if}
   {if $pi_can_discover}<button type="button" class="btn btn-default pi-discover-button" {if !$pi_preview_id}disabled{/if}>Discover categories from full JSON</button>{/if}
   <div class="pi-results" aria-live="polite"></div>
 </div>

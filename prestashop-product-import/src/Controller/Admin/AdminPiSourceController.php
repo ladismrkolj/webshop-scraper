@@ -349,7 +349,8 @@ class AdminPiSourceController extends ModuleAdminController
         $sources = $this->sources->findAll();
         foreach ($sources as $source) {
             $url = $this->context->link->getAdminLink('AdminPiCategoryMap') . '&id_source=' . (int) $source['id_source'];
-            $banner .= '<p>' . Tools::safeOutput($source['name']) . ': <a href="' . Tools::safeOutput($url) . '">Category mappings</a></p>';
+            $brandUrl = $this->context->link->getAdminLink('AdminPiManufacturerMap') . '&id_source=' . (int) $source['id_source'];
+            $banner .= '<p>' . Tools::safeOutput($source['name']) . ': <a href="' . Tools::safeOutput($url) . '">Category mappings →</a> | <a href="' . Tools::safeOutput($brandUrl) . '">Brand mappings →</a></p>';
         }
         return $banner . $helper->generateList($sources, [
             'name' => ['title' => $this->trans('Name')],
@@ -397,7 +398,7 @@ class AdminPiSourceController extends ModuleAdminController
             }, $variant['attributes'] ?? []),
             'pi_variant_field_rows' => $variant['field_rows'] ?? $variantFields,
         ]);
-        $this->context->smarty->assign(['pi_category_url' => $this->context->link->getAdminLink('AdminPiCategoryMap') . '&id_source=' . $id, 'pi_can_discover' => $this->access('edit'), 'pi_preview_id' => $id, 'pi_preview_url' => $this->context->link->getAdminLink('AdminPiSource')]);
+        $this->context->smarty->assign(['pi_manufacturer_url' => $this->context->link->getAdminLink('AdminPiManufacturerMap') . '&id_source=' . $id, 'pi_category_url' => $this->context->link->getAdminLink('AdminPiCategoryMap') . '&id_source=' . $id, 'pi_can_discover' => $this->access('edit'), 'pi_preview_id' => $id, 'pi_preview_url' => $this->context->link->getAdminLink('AdminPiSource')]);
         $mappingHtml = $this->context->smarty->fetch(dirname(__DIR__, 3) . '/views/templates/admin/source_form.tpl');
         $helpTemplate = $this->context->smarty->createTemplate(dirname(__DIR__, 3) . '/views/templates/admin/source_form.tpl');
         $helpTemplate->assign('pi_help_section', 'identifier');

@@ -13,7 +13,7 @@ class AdminPiCategoryMapController extends ModuleAdminController
 
     public function postProcess()
     {
-        if (!Tools::isSubmit('saveCategoryMapping')) {
+        if (!Tools::isSubmit('saveCategoryMapping') && !Tools::isSubmit('saveDefaultMapping')) {
             return;
         }
         try {
@@ -24,11 +24,6 @@ class AdminPiCategoryMapController extends ModuleAdminController
             if (!(new SourceRepository())->find($idSource)) {
                 throw new InvalidArgumentException('Source not found.');
             }
-            $hash = Tools::getValue('source_path_hash');
-            $repository = new CategoryMappingRepository();
-            if (!is_string($hash) || !$repository->findOverride($idSource, $hash)) {
-                throw new InvalidArgumentException('Unknown source path.');
-            }
             $value = Tools::getValue('id_category', '');
             if (!is_string($value) || ($value !== '' && (!ctype_digit($value) || (int) $value <= 0))) {
                 throw new InvalidArgumentException('Invalid category.');
@@ -37,7 +32,18 @@ class AdminPiCategoryMapController extends ModuleAdminController
             if ($idCategory !== null && !in_array($idCategory, array_column($this->categoryOptions(), 'id_category'), true)) {
                 throw new InvalidArgumentException('Category is not available in this shop.');
             }
-            $repository->setOverride($idSource, $hash, $idCategory);
+            if (Tools::isSubmit('saveDefaultMapping')) {
+                if (!(new SourceRepository())->update($idSource, ['default_id_category' => $idCategory])) {
+                    throw new RuntimeException('Unable to save default category.');
+                }
+            } else {
+                $hash = Tools::getValue('source_path_hash');
+                $repository = new CategoryMappingRepository();
+                if (!is_string($hash) || !$repository->findOverride($idSource, $hash)) {
+                    throw new InvalidArgumentException('Unknown source path.');
+                }
+                $repository->setOverride($idSource, $hash, $idCategory);
+            }
             Tools::redirectAdmin($this->context->link->getAdminLink('AdminPiCategoryMap') . '&id_source=' . $idSource . '&conf=4');
         } catch (Throwable $error) {
             $this->errors[] = Tools::safeOutput($error->getMessage());
@@ -59,7 +65,7 @@ class AdminPiCategoryMapController extends ModuleAdminController
                 foreach ($rows as &$row) {
                     $path = json_decode($row['source_path'], true, 512, JSON_THROW_ON_ERROR);
                     $row['display_path'] = implode(' > ', $path);
-                    $row['current'] = $row['id_category'] === null ? 'auto-create' : 'existing category #' . $row['id_category'] . ' (' . ($names[$row['id_category']] ?? 'missing or unavailable') . ')';
+                    $row['current'] = $row['id_category'] === null ? ($source['default_id_category'] === null ? 'auto-create' : 'source default #' . $source['default_id_category']) : 'existing category #' . $row['id_category'] . ' (' . ($names[$row['id_category']] ?? 'missing or unavailable') . ')';
                 }
                 unset($row);
                 $this->context->smarty->assign([

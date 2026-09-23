@@ -56,8 +56,8 @@ class ImportRunner
                     $this->log($log, "item $index field $field: $error");
                 }
                 $values = $mapped['values'];
-                $categoryIds = isset($values['category_paths']) ? $this->categories->resolve($this->normalizer->normalize($values['category_paths']), $idSource, isset($source['root_category_id']) ? (int) $source['root_category_id'] : null, true) : [];
-                $manufacturer = $this->manufacturers->resolve($values['manufacturer'] ?? null, $idSource, true);
+                $categoryIds = isset($values['category_paths']) ? $this->categories->resolve($this->normalizer->normalize($values['category_paths']), $idSource, isset($source['root_category_id']) ? (int) $source['root_category_id'] : null, true, isset($source['default_id_category']) ? (int) $source['default_id_category'] : null) : [];
+                $manufacturer = $this->manufacturers->resolve($values['manufacturer'] ?? null, $idSource, true, isset($source['default_id_manufacturer']) ? (int) $source['default_id_manufacturer'] : null);
                 $idProduct = $this->products->import($idSource, $externalId, $values, $categoryIds, $manufacturer, (int) $source['id_lang_default'], (bool) $source['price_tax_included']);
                 // Importers retain their existing signatures; refresh their link with this run ID.
                 $this->productLinks->link($idSource, $externalId, $idProduct, $idRun);

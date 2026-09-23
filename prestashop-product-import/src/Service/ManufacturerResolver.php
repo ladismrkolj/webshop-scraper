@@ -23,7 +23,7 @@ class ManufacturerResolver
     }
 
     /** @return int|null|array Commit: ID/null; preview: {name, id_manufacturer, auto_create}. */
-    public function resolve(?string $name, int $idSource, bool $commit = true)
+    public function resolve(?string $name, int $idSource, bool $commit = true, ?int $defaultId = null)
     {
         if ($name === null || trim($name) === '') {
             return $commit ? null : ['name' => null, 'id_manufacturer' => null, 'auto_create' => false];
@@ -33,6 +33,9 @@ class ManufacturerResolver
         if ($override !== null && $override['id_manufacturer'] !== null) {
             $id = (int) $override['id_manufacturer'];
             return $commit ? $id : ['name' => $name, 'id_manufacturer' => $id, 'auto_create' => false];
+        }
+        if ($defaultId !== null) {
+            return $commit ? $defaultId : ['name' => $name, 'id_manufacturer' => $defaultId, 'auto_create' => false];
         }
         // Manufacturer names are in manufacturer itself, not manufacturer_lang.
         $id = \Db::getInstance()->getValue(

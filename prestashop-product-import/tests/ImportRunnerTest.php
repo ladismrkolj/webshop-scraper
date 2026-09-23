@@ -93,16 +93,18 @@ class ImportRunnerTest extends TestCase
             public function __construct()
             {
             }
-            public function resolve(array $paths, int $source, ?int $root, bool $commit = true): array
+            public function resolve(array $paths, int $source, ?int $root, bool $commit = true, ?int $defaultId = null): array
             {
                 TestCase::assertTrue($commit);
+                TestCase::assertSame(23, $defaultId);
                 TestCase::assertSame([['Boards']], $paths);
                 return [3];
             }
         };
         $manufacturers = new class () extends ManufacturerResolver {
-            public function resolve(?string $name, int $idSource, bool $commit = true)
+            public function resolve(?string $name, int $idSource, bool $commit = true, ?int $defaultId = null)
             {
+                TestCase::assertSame(24, $defaultId);
                 TestCase::assertSame(1, $idSource);
                 TestCase::assertTrue($commit);
                 return 4;
@@ -153,7 +155,7 @@ class ImportRunnerTest extends TestCase
 
     private function source(array $overrides = []): array
     {
-        return $overrides + ['id_source' => 1, 'active' => 1, 'identifier_field' => 'id', 'id_lang_default' => 1, 'price_tax_included' => false,
+        return $overrides + ['id_source' => 1, 'default_id_category' => 23, 'default_id_manufacturer' => 24, 'active' => 1, 'identifier_field' => 'id', 'id_lang_default' => 1, 'price_tax_included' => false,
             'field_mapping' => ['name' => '"Board"', 'category_paths' => '["Boards"]'], 'filter_expression' => 'path(fields, "skip") != true', 'deactivate_missing' => false];
     }
 

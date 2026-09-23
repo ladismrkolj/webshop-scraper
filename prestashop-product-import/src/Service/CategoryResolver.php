@@ -19,7 +19,7 @@ class CategoryResolver
      * @param list<list<string>> $normalizedPaths
      * @return array Commit: list<int>; preview: list<{path, id_category, auto_create}>.
      */
-    public function resolve(array $normalizedPaths, int $idSource, ?int $rootCategoryId, bool $commit = true): array
+    public function resolve(array $normalizedPaths, int $idSource, ?int $rootCategoryId, bool $commit = true, ?int $defaultId = null): array
     {
         $resolved = [];
         foreach ($normalizedPaths as $path) {
@@ -33,6 +33,10 @@ class CategoryResolver
             $override = $this->mappings->findOverride($idSource, $hash);
             if ($override !== null && $override['id_category'] !== null) {
                 $resolved[] = $commit ? (int) $override['id_category'] : ['path' => $path, 'id_category' => (int) $override['id_category'], 'auto_create' => false];
+                continue;
+            }
+            if ($defaultId !== null) {
+                $resolved[] = $commit ? $defaultId : ['path' => $path, 'id_category' => $defaultId, 'auto_create' => false];
                 continue;
             }
             $parent = $rootCategoryId ?? (int) \Configuration::get('PS_ROOT_CATEGORY');

@@ -51,13 +51,13 @@ class PreviewBuilder
         if (isset($values['category_paths'])) {
             try {
                 $paths = $this->normalizer->normalize($values['category_paths']);
-                $result['categories'] = $this->categories->resolve($paths, (int) $source['id_source'], isset($source['root_category_id']) ? (int) $source['root_category_id'] : null, false);
+                $result['categories'] = $this->categories->resolve($paths, (int) $source['id_source'], isset($source['root_category_id']) ? (int) $source['root_category_id'] : null, false, isset($source['default_id_category']) ? (int) $source['default_id_category'] : null);
             } catch (\Throwable $error) {
                 $result['errors']['categories'] = $error->getMessage();
             }
         }
         try {
-            $result['manufacturer'] = $this->manufacturers->resolve($values['manufacturer'] ?? null, (int) $source['id_source'], false);
+            $result['manufacturer'] = $this->manufacturers->resolve($values['manufacturer'] ?? null, (int) $source['id_source'], false, isset($source['default_id_manufacturer']) ? (int) $source['default_id_manufacturer'] : null);
         } catch (\Throwable $error) {
             $result['errors']['manufacturer'] = $error->getMessage();
         }

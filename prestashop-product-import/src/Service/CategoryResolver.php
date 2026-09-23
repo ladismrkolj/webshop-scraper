@@ -73,7 +73,7 @@ class CategoryResolver
         foreach (\Language::getLanguages(false) as $language) {
             $idLang = (int) $language['id_lang'];
             $category->name[$idLang] = $name;
-            $category->link_rewrite[$idLang] = \Tools::link_rewrite($name) ?: 'category';
+            $category->link_rewrite[$idLang] = \Tools::str2url($name) ?: 'category';
         }
         if (!$category->add()) {
             throw new \RuntimeException('Unable to create category: ' . $name);

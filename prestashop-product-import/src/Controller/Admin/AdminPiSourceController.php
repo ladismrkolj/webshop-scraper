@@ -3,7 +3,9 @@
 use ProductImport\Repository\SourceRepository;
 
 // Legacy controller classes must be global for PrestaShop's tab dispatcher.
-class AdminPiSourceController extends AdminController
+// PS9 removed the legacy l()/translation fallback from AdminController; it
+// only exists on ModuleAdminController now.
+class AdminPiSourceController extends ModuleAdminController
 {
     private $sources;
     private $submittedSource;
@@ -35,7 +37,7 @@ class AdminPiSourceController extends AdminController
         $id = (int) Tools::getValue('id_source');
         $permission = $deleting ? 'delete' : ($id > 0 ? 'edit' : 'add');
         if (!$this->access($permission) || !$this->checkToken()) {
-            $this->errors[] = $this->l('You do not have permission or your security token is invalid.');
+            $this->errors[] = $this->trans('You do not have permission or your security token is invalid.');
 
             return;
         }
@@ -146,7 +148,7 @@ class AdminPiSourceController extends AdminController
         $this->context->smarty->assign([
             'content' => $this->content,
             'show_page_header_toolbar' => false,
-            'page_header_toolbar_title' => $this->l('Product Import sources'),
+            'page_header_toolbar_title' => $this->trans('Product Import sources'),
         ]);
     }
 
@@ -155,7 +157,7 @@ class AdminPiSourceController extends AdminController
         $helper = new HelperList();
         $helper->table = $this->table;
         $helper->identifier = $this->identifier;
-        $helper->title = $this->l('Product Import sources');
+        $helper->title = $this->trans('Product Import sources');
         $helper->token = $this->token;
         $helper->currentIndex = self::$currentIndex;
         $helper->simple_header = true;
@@ -168,16 +170,16 @@ class AdminPiSourceController extends AdminController
         if ($this->access('add')) {
             $helper->toolbar_btn['new'] = [
                 'href' => $this->context->link->getAdminLink('AdminPiSource') . '&addpi_source',
-                'desc' => $this->l('Add source'),
+                'desc' => $this->trans('Add source'),
             ];
         }
 
         $cronUrl = $this->context->link->getModuleLink('productimport', 'cron', ['token' => Configuration::get('PIIMPORT_CRON_TOKEN')], true);
         $banner = '<div class="alert alert-info">Daily cron URL: <code>' . Tools::safeOutput($cronUrl) . '</code></div>';
         return $banner . $helper->generateList($this->sources->findAll(), [
-            'name' => ['title' => $this->l('Name')],
-            'technical_key' => ['title' => $this->l('Technical key')],
-            'active' => ['title' => $this->l('Active'), 'type' => 'bool'],
+            'name' => ['title' => $this->trans('Name')],
+            'technical_key' => ['title' => $this->trans('Technical key')],
+            'active' => ['title' => $this->trans('Active'), 'type' => 'bool'],
         ]);
     }
 
@@ -189,7 +191,7 @@ class AdminPiSourceController extends AdminController
             $source = $id > 0 ? $this->sources->find($id) : [];
         }
         if ($source === null) {
-            $this->errors[] = $this->l('Source not found.');
+            $this->errors[] = $this->trans('Source not found.');
 
             return '';
         }
@@ -228,37 +230,37 @@ class AdminPiSourceController extends AdminController
             'json_file_path' => 'JSON file path', 'identifier_field' => 'Identifier field',
         ] as $name => $label) {
             $inputs[] = [
-                'type' => 'text', 'label' => $this->l($label), 'name' => $name,
+                'type' => 'text', 'label' => $this->trans($label), 'name' => $name,
                 'required' => in_array($name, ['name', 'technical_key', 'identifier_field'], true),
             ];
         }
-        $inputs[] = ['type' => 'textarea', 'label' => $this->l('Filter expression'), 'name' => 'filter_expression'];
-        $inputs[] = ['type' => 'html', 'name' => 'mapping_rows', 'html_content' => $mappingHtml, 'label' => $this->l('Field mapping')];
-        $tree = new HelperTreeCategories('pi-root-category-tree', $this->l('Root category'));
+        $inputs[] = ['type' => 'textarea', 'label' => $this->trans('Filter expression'), 'name' => 'filter_expression'];
+        $inputs[] = ['type' => 'html', 'name' => 'mapping_rows', 'html_content' => $mappingHtml, 'label' => $this->trans('Field mapping')];
+        $tree = new HelperTreeCategories('pi-root-category-tree', $this->trans('Root category'));
         $tree->setRootCategory((int) Configuration::get('PS_ROOT_CATEGORY'));
         $tree->setInputName('root_category_id');
         $tree->setUseCheckBox(false);
         $tree->setUseSearch(true);
         $tree->setSelectedCategories($source['root_category_id'] ? [(int) $source['root_category_id']] : []);
         $inputs[] = [
-            'type' => 'html', 'name' => 'root_category_tree', 'label' => $this->l('Root category'),
+            'type' => 'html', 'name' => 'root_category_tree', 'label' => $this->trans('Root category'),
             'html_content' => $tree->render() . '<button type="button" class="btn btn-default" onclick="document.querySelectorAll(&quot;[name=root_category_id]&quot;).forEach(function (input) { input.checked = false; });">Use shop root</button>',
-            'desc' => $this->l('Leave unselected to create category chains under the shop root category.'),
+            'desc' => $this->trans('Leave unselected to create category chains under the shop root category.'),
         ];
         $inputs[] = [
-            'type' => 'select', 'name' => 'id_lang_default', 'label' => $this->l('Source language'),
+            'type' => 'select', 'name' => 'id_lang_default', 'label' => $this->trans('Source language'),
             'options' => ['query' => Language::getLanguages(false), 'id' => 'id_lang', 'name' => 'name'],
         ];
         foreach (['active' => 'Active', 'price_tax_included' => 'Prices include tax', 'deactivate_missing' => 'Deactivate missing products'] as $field => $label) {
             $inputs[] = [
-                'type' => 'switch', 'name' => $field, 'label' => $this->l($label), 'is_bool' => true,
+                'type' => 'switch', 'name' => $field, 'label' => $this->trans($label), 'is_bool' => true,
                 'values' => [
-                    ['id' => $field . '_on', 'value' => 1, 'label' => $this->l('Yes')],
-                    ['id' => $field . '_off', 'value' => 0, 'label' => $this->l('No')],
+                    ['id' => $field . '_on', 'value' => 1, 'label' => $this->trans('Yes')],
+                    ['id' => $field . '_off', 'value' => 0, 'label' => $this->trans('No')],
                 ],
                 'desc' => $field === 'price_tax_included'
-                    ? $this->l('Tax conversion is not implemented yet: prices are currently stored unchanged.')
-                    : ($field === 'deactivate_missing' ? $this->l('After a successful fetch, untouched products are deactivated and untouched combinations receive zero stock.') : ''),
+                    ? $this->trans('Tax conversion is not implemented yet: prices are currently stored unchanged.')
+                    : ($field === 'deactivate_missing' ? $this->trans('After a successful fetch, untouched products are deactivated and untouched combinations receive zero stock.') : ''),
             ];
         }
         $helper = new HelperForm();
@@ -272,9 +274,9 @@ class AdminPiSourceController extends AdminController
         $helper->fields_value = $source;
 
         return $helper->generateForm([['form' => [
-            'legend' => ['title' => $this->l('Import source')],
+            'legend' => ['title' => $this->trans('Import source')],
             'input' => $inputs,
-            'submit' => ['title' => $this->l('Save')],
+            'submit' => ['title' => $this->trans('Save')],
         ]]]);
     }
 

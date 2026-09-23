@@ -101,3 +101,62 @@ After a successful fetch, deactivate_missing follows the requested touched-link 
 Existing limitations still apply: tax-inclusive prices are not converted, image imports append across runs, identifier colon boundaries must be unambiguous, and full multistore orchestration is not implemented.
 
 ImportRunner tests use injected handwritten catalog/repository/importer doubles plus real pure mapping/filter components. They cover mixed outcomes, fetch failure, variant isolation, saved-price usage, run markers, stale-only cleanup, logging bounds and source failure isolation. ImportRunRepository, front-controller dispatch, the run-log controller and ImportCatalog's actual PrestaShop writes require live integration verification; no fake PrestaShop core bootstrap was added.
+
+## Verified live against real PrestaShop 9.1.5 (`local-dev/`)
+
+Everything above was built and gated without a live PrestaShop instance.
+It has since been installed and exercised end-to-end against a real
+PrestaShop 9.1.5 + PHP 8.3 + MySQL 8 stack (`local-dev/`, a throwaway
+Docker environment — see that directory's README) — module install/
+uninstall, both admin pages (list, add, edit, the dynamic mapping-row and
+variant-mapping JS, the category tree widget), save/persist round-trips,
+the AJAX preview endpoint against real fixture data, and a full cron run
+that created real products with real category/manufacturer resolution.
+
+That pass found and fixed real PS9-specific bugs that unit tests alone
+couldn't catch (no PrestaShop core to run them against):
+
+- **`composer.json`'s `symfony/expression-language` constraint left
+  `symfony/cache` and `symfony/var-exporter` unconstrained**, so Composer
+  resolved them to `8.x`, which requires PHP 8.4.1+ — above this module's
+  own declared `>=8.2` floor and above PS9's own `8.1`-`8.4` supported
+  range on an 8.1/8.2/8.3 install. Fixed by explicitly constraining both
+  to `^6.4 || ^7.0` in `require`. This is exactly the kind of bug that
+  only surfaces when `vendor/` actually gets loaded by a real PHP runtime
+  different from whichever machine ran `composer install` — worth
+  re-checking after any future dependency bump.
+- **`AdminController::l()` does not exist in PrestaShop 9** (confirmed via
+  `ReflectionClass` against the real core, not assumed) — only
+  `ModuleAdminController` extends far enough to matter, and even that
+  doesn't have `l()` either; the actual universal translation method,
+  present all the way up at `ControllerCore`, is `trans($id, $parameters
+  = [], $domain = null, $locale = null)`. `AdminPiSourceController` and
+  `AdminPiRunLogController` now extend `ModuleAdminController` (the
+  conventionally-correct base for a module's own admin pages) and every
+  `$this->l(...)` call was replaced with `$this->trans(...)`.
+- **`Tools::link_rewrite()` does not exist**; the real method is
+  `Tools::str2url()`. Fixed in `CategoryResolver` and `ProductImporter`.
+
+Not yet exercised live: combinations/attributes end-to-end (tested via
+`PreviewBuilder` and unit tests, not yet a real committed import),
+`deactivate_missing`, and the tax-inclusive-price TODO path (still
+unimplemented as documented above). The install auto-installer also
+required the standard post-install `/install*` folder removal and a
+`var/cache` ownership fix (`chown -R www-data:www-data`) — both
+environment/deployment steps, not module bugs, and already handled by
+`local-dev/`'s normal flow once you know to do them.
+
+One more environment note, not a bug: PrestaShop rewrites `config.xml` on
+disk after install (reformats it and drops the `ps_versions_compliancy`
+element entirely) — harmless at runtime (that element is only read by the
+module validator/marketplace before install, not afterward), but don't be
+surprised if a live install leaves your working tree's `config.xml`
+looking modified; just don't commit that regenerated copy.
+
+One UI gap found, not yet fixed: the "Add source" toolbar button doesn't
+render on the source list page in PS9's redesigned admin theme (likely a
+`HelperList` toolbar-button rendering change in PS9's Symfony-wrapped
+legacy pages — not investigated further). Workaround: navigate directly
+to `index.php?controller=AdminPiSource&addpi_source` (the add form itself
+renders and saves correctly; only the list page's shortcut link is
+missing).

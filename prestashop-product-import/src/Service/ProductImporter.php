@@ -43,7 +43,7 @@ class ProductImporter
         }
         if (isset($mappedValues['name'])) {
             $slugs = is_array($product->link_rewrite) ? $product->link_rewrite : [];
-            $slugs[$idLangDefault] = \Tools::link_rewrite((string) $mappedValues['name']) ?: 'product';
+            $slugs[$idLangDefault] = \Tools::str2url((string) $mappedValues['name']) ?: 'product';
             $product->link_rewrite = $slugs;
         }
         // ObjectModel requires name/link_rewrite in the shop default language too.

@@ -1,0 +1,55 @@
+name: productimport-dev
+
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWD}
+      MYSQL_DATABASE: ${DB_NAME}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  prestashop:
+    image: prestashop/prestashop:${PS_IMAGE_TAG}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${HOST_PORT}:80"
+    environment:
+      DB_SERVER: db
+      DB_NAME: ${DB_NAME}
+      DB_USER: root
+      DB_PASSWD: ${DB_PASSWD}
+      PS_DOMAIN: localhost:${HOST_PORT}
+      PS_INSTALL_AUTO: 1
+      PS_LANGUAGE: en
+      PS_COUNTRY: si
+      ADMIN_MAIL: ${ADMIN_MAIL}
+      ADMIN_PASSWD: ${ADMIN_PASSWD}
+      PS_FOLDER_ADMIN: admin-dev
+      PS_DEV_MODE: 1
+    volumes:
+      - ps_data:/var/www/html
+      # The module itself, bind-mounted read-write so edits on the host show up
+      # immediately without rebuilding anything. This is the ONLY thing from
+      # the repo that goes into the container.
+      - ../prestashop-product-import:/var/www/html/modules/productimport
+      # ...except vendor/: the host's copy is built with dev deps (phpunit,
+      # php-cs-fixer) under whatever PHP the host happens to run, which can
+      # be newer than this container's PHP and fail Composer's platform
+      # check. This named volume shadows just that subpath with a
+      # container-appropriate, --no-dev build (see `make vendor` / README).
+      - module_vendor:/var/www/html/modules/productimport/vendor
+
+volumes:
+  db_data:
+  ps_data:
+  module_vendor:

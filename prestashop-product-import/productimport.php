@@ -16,7 +16,7 @@ class ProductImport extends Module
         $this->author = 'Product Import';
         $this->need_instance = 0;
         $this->bootstrap = true;
-        $this->ps_versions_compliancy = ['min' => '1.7.0.0', 'max' => '8.99.99'];
+        $this->ps_versions_compliancy = ['min' => '9.0.0', 'max' => '9.99.99'];
         parent::__construct();
         $this->displayName = $this->l('Product Import');
         $this->description = $this->l('Configure JSON sources, filters and product field expressions.');

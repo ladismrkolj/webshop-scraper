@@ -12,7 +12,7 @@ composer install
 ./vendor/bin/php-cs-fixer fix --dry-run --diff
 ```
 
-Dependencies and tools stay in local `vendor/`. Runtime source uses PHP 7.2.5-compatible syntax (the evaluator's `mixed` return is documented, not a PHP 8 type declaration). PHPUnit 13 requires PHP 8.4+ for development. Composer selects dependencies for the PHP version doing the installation; a lock resolved on PHP 8.5 is not a guarantee of compatibility with PHP 7.2. Resolve and validate production dependencies for the actual deployment PHP version before packaging.
+Dependencies and tools stay in local `vendor/`. Target platform is **PrestaShop 9.x**, which requires **PHP 8.1+** (`composer.json`'s floor and `ps_versions_compliancy` in `productimport.php`/`config.xml` are set accordingly). Some code still uses PHP-7.2-era patterns (e.g. the evaluator's PHPDoc `mixed` return instead of a native union type) left over from before the PS9 target was confirmed — harmless under 8.1+, just not yet modernized; safe to clean up later, not required for correctness. PrestaShop 9 continues to support legacy `AdminController`/`HelperForm`/`HelperList`-based module admin pages for backward compatibility (confirmed against PrestaShop's own developer docs), so this module's admin controller approach remains valid, though it has not yet been exercised against a real PS9 install. PHPUnit 13 requires PHP 8.4+ for development; Composer selects dependencies for the PHP version doing the installation, so re-resolve on the actual deployment PHP version before packaging if it differs from the machine used here.
 
 ## Installation and source editor
 

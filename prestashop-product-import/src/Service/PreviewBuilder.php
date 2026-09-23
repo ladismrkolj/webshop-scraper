@@ -57,7 +57,7 @@ class PreviewBuilder
             }
         }
         try {
-            $result['manufacturer'] = $this->manufacturers->resolve($values['manufacturer'] ?? null, false);
+            $result['manufacturer'] = $this->manufacturers->resolve($values['manufacturer'] ?? null, (int) $source['id_source'], false);
         } catch (\Throwable $error) {
             $result['errors']['manufacturer'] = $error->getMessage();
         }

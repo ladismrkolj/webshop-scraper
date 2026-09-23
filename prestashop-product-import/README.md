@@ -199,3 +199,27 @@ Inspect sample item sits above the mapping rows and shares Preview's item-index/
 New unit tests cover FieldInspector only. Discovery, repository queries, mapping-page rendering/saving, tab upgrades and controller dispatch are intentionally not tested with fake PrestaShop objects.
 
 **Verified live against real PrestaShop 9.1.5, all working**: `php bin/console prestashop:module upgrade productimport` registered the new hidden `AdminPiCategoryMap` tab correctly. The "+ Add source" button renders and links to a working add form. "Inspect sample item" returns correct pretty JSON and a correctly-flattened field list (e.g. `breadcrumbs[0].title` → `"Windsurf"`) for a real saved source. "Discover categories from full JSON" scanned a real 3-item fixture, found 1 unique path, 0 errors, and the "Open category mappings" link took me straight to the new mapping page. Setting an override there (path → an existing "Home" category via the indented `<select>`) saved correctly and the page reflected "→ existing category #2 (— Home #2)" afterward.
+
+## Source editor v2 backend: Test source and manufacturer overrides (0.8.0)
+
+Upgrade the installed module to 0.8.0 before testing saved sources or importing: the upgrade adds pi_manufacturer_mapping without reinstalling or resetting data. No brand-mapping page or new button is included in this step. Existing Inspect and Discover categories buttons remain compatible; Test source is available directly over AJAX.
+
+POST to the tokenized AdminPiSource URL with `ajax=1`, `action=testSource`, raw `json_url` and/or `json_file_path` (URL wins), and exactly one of `item_index=0` or `raw_item={...}`. Omit `id_source` entirely for a never-saved source. An optional positive `id_source` enables discovery using that saved source's category_paths/manufacturer expressions against the **submitted** feed. The saved URL/path is never substituted. Raw-paste mode chooses the inspected item only; connectivity and discovery still fetch/scan the full submitted feed. A nonempty JSON array is required. Unsaved requests require add permission, saved requests require edit permission, and both require the admin token.
+
+Successful response:
+
+```json
+{
+  "connectivity": {"ok": true, "format": "non-empty JSON array"},
+  "item_count": 10,
+  "inspection": {"json": "pretty JSON string", "fields": [{"key": "brand", "value": "Acme"}], "truncated": false},
+  "categories": {"unique_paths": 2, "items_scanned": 10, "failed_items": 0, "errors": [], "errors_omitted": 0, "mapping_url": "tokenized AdminPiCategoryMap URL"},
+  "brands": {"unique_brands": 1, "items_scanned": 10, "failed_items": 0, "errors": [], "errors_omitted": 0, "mapping_url": "tokenized AdminPiManufacturerMap URL"}
+}
+```
+
+Each discovery section instead returns `{"skipped":"source not saved yet"}` or `{"skipped":"no saved category_paths expression"}` / `{"skipped":"no saved manufacturer expression"}` when inapplicable. Inspection/discovery stage failures return `{"error":"message"}` in that section and do not block the other sections. Fetch, permissions, empty-feed or source-lookup failures return top-level `{"error":"message"}`. Per-item discovery failures increment failed_items and expose up to 20 examples of 500 characters each. No item cap is applied; category and brand scans deduplicate in memory before recording unique entries. Null/blank brands are ignored; nonstring or over-191-character brands count as failures. Discovery does not evaluate the product filter and never creates catalog categories/manufacturers.
+
+ManufacturerResolver now exposes `resolve(?string $name, int $idSource, bool $commit = true)`. It trims names and applies source overrides before exact-name catalog lookup/creation, retaining commit-ID versus preview-object return shapes. `discover(string $name, int $idSource)` only records the trimmed nonblank name. Upserting seen names preserves admin overrides. PreviewBuilder and ImportRunner pass source IDs; ProductImporter still receives an already-resolved manufacturer ID. The brand mapping URL intentionally targets the not-yet-implemented AdminPiManufacturerMap controller (next step).
+
+Repository/real resolver/controller behavior is bootstrap-bound and has not been unit-tested with fake PrestaShop classes. Existing PreviewBuilder/ImportRunner tests only update the resolver-double signatures and assert source IDs. Live AJAX request, upgrade and database behavior remain to be verified on PS9.1.5.

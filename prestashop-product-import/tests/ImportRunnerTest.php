@@ -101,8 +101,9 @@ class ImportRunnerTest extends TestCase
             }
         };
         $manufacturers = new class () extends ManufacturerResolver {
-            public function resolve(?string $name, bool $commit = true)
+            public function resolve(?string $name, int $idSource, bool $commit = true)
             {
+                TestCase::assertSame(1, $idSource);
                 TestCase::assertTrue($commit);
                 return 4;
             }

@@ -12,7 +12,7 @@ class ProductImport extends Module
     {
         $this->name = 'productimport';
         $this->tab = 'administration';
-        $this->version = '0.7.0';
+        $this->version = '0.8.0';
         $this->author = 'Product Import';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -48,6 +48,17 @@ class ProductImport extends Module
             UNIQUE KEY `technical_key` (`technical_key`)
         ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4';
         if (!Db::getInstance()->execute($sql)) {
+            return false;
+        }
+        if (!Db::getInstance()->execute('CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'pi_manufacturer_mapping` (
+            `id_mapping` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `id_source` INT UNSIGNED NOT NULL,
+            `source_name` VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            `id_manufacturer` INT UNSIGNED NULL,
+            `date_upd` DATETIME NOT NULL,
+            PRIMARY KEY (`id_mapping`),
+            UNIQUE KEY `source_name` (`id_source`, `source_name`)
+        ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4')) {
             return false;
         }
         if (!Db::getInstance()->execute('CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'pi_category_mapping` (
@@ -119,7 +130,7 @@ class ProductImport extends Module
 
     public function uninstall()
     {
-        foreach (['pi_import_run', 'pi_external_combination', 'pi_external_product', 'pi_category_mapping', 'pi_source'] as $table) {
+        foreach (['pi_import_run', 'pi_external_combination', 'pi_external_product', 'pi_category_mapping', 'pi_manufacturer_mapping', 'pi_source'] as $table) {
             if (!Db::getInstance()->execute('DROP TABLE IF EXISTS `' . _DB_PREFIX_ . $table . '`')) {
                 return false;
             }

@@ -24,7 +24,7 @@ class AdminPiSourceController extends ModuleAdminController
 
     public function postProcess()
     {
-        $actions = ['preview' => 'ajaxProcessPreview', 'inspect' => 'ajaxProcessInspect', 'discoverCategories' => 'ajaxProcessDiscoverCategories'];
+        $actions = ['testSource' => 'ajaxProcessTestSource', 'preview' => 'ajaxProcessPreview', 'inspect' => 'ajaxProcessInspect', 'discoverCategories' => 'ajaxProcessDiscoverCategories'];
         $action = Tools::getValue('action');
         if ($this->ajax && is_string($action) && isset($actions[$action])) {
             $this->{$actions[$action]}();
@@ -110,7 +110,7 @@ class AdminPiSourceController extends ModuleAdminController
         die($json === false ? '{"error":"Unable to encode preview response."}' : $json);
     }
 
-    private function sampleItem(array $source): array
+    private function sampleItem(array $source, ?array $fetchedItems = null): array
     {
         $hasIndex = Tools::getIsset('item_index');
         $hasRaw = Tools::getIsset('raw_item');
@@ -131,7 +131,7 @@ class AdminPiSourceController extends ModuleAdminController
             if (!is_string($index) || !ctype_digit($index)) {
                 throw new InvalidArgumentException('item_index must be a non-negative integer.');
             }
-            $items = (new \ProductImport\Service\JsonFetcher())->fetch($source['json_url'], $source['json_file_path']);
+            $items = $fetchedItems ?? (new \ProductImport\Service\JsonFetcher())->fetch($source['json_url'], $source['json_file_path']);
             if (!array_key_exists((int) $index, $items) || !is_array($items[(int) $index])) {
                 throw new InvalidArgumentException('No product object at that index.');
             }
@@ -161,33 +161,131 @@ class AdminPiSourceController extends ModuleAdminController
                 throw new InvalidArgumentException('Save a category_paths expression before discovery.');
             }
             $items = (new \ProductImport\Service\JsonFetcher())->fetch($source['json_url'], $source['json_file_path']);
-            $evaluator = new \ProductImport\Service\ExpressionEvaluator();
-            $normalizer = new \ProductImport\Service\CategoryPathNormalizer();
-            $paths = [];
-            $failed = 0;
-            $errors = [];
-            foreach ($items as $index => $item) {
-                try {
-                    if (!is_array($item)) {
-                        throw new InvalidArgumentException('Item is not an object.');
-                    }
-                    foreach ($normalizer->normalize($evaluator->evaluate($expression, ['fields' => $item])) as $path) {
-                        $paths[$normalizer->hash($path)] = $path;
-                    }
-                } catch (Throwable $error) {
-                    ++$failed;
-                    if (count($errors) < 20) {
-                        $errors[] = 'Item ' . $index . ': ' . mb_substr($error->getMessage(), 0, 500);
-                    }
-                }
-            }
-            (new \ProductImport\Service\CategoryResolver(new \ProductImport\Repository\CategoryMappingRepository(), $normalizer))->discover(array_values($paths), (int) $source['id_source']);
-            $result = ['unique_paths' => count($paths), 'items_scanned' => count($items), 'failed_items' => $failed, 'errors' => $errors,
-                'errors_omitted' => max(0, $failed - count($errors)), 'mapping_url' => $this->context->link->getAdminLink('AdminPiCategoryMap') . '&id_source=' . (int) $source['id_source']];
+            $result = $this->discoverValues($items, (int) $source['id_source'], $expression, false);
         } catch (Throwable $error) {
             $result = ['error' => $error->getMessage()];
         }
         $this->sendJson($result);
+    }
+
+    public function ajaxProcessTestSource()
+    {
+        try {
+            $rawId = $_POST['id_source'] ?? '';
+            if (!is_string($rawId) || ($rawId !== '' && (!ctype_digit($rawId) || (int) $rawId <= 0))) {
+                throw new InvalidArgumentException('id_source must be a positive integer when provided.');
+            }
+            $idSource = $rawId === '' ? null : (int) $rawId;
+            if (!$this->checkToken() || !$this->access($idSource === null ? 'add' : 'edit')) {
+                throw new RuntimeException('Permission denied or invalid security token.');
+            }
+            $source = $idSource === null ? null : $this->sources->find($idSource);
+            if ($idSource !== null && !$source) {
+                throw new InvalidArgumentException('Source not found.');
+            }
+            $input = [];
+            foreach (['json_url', 'json_file_path'] as $key) {
+                $value = $_POST[$key] ?? null;
+                if ($value !== null && !is_string($value)) {
+                    throw new InvalidArgumentException($key . ' must be a string.');
+                }
+                $input[$key] = $value;
+            }
+            // Always test the submitted location, never silently substitute the saved URL/path.
+            $items = (new \ProductImport\Service\JsonFetcher())->fetch($input['json_url'], $input['json_file_path']);
+            if ($items === []) {
+                throw new InvalidArgumentException('Source JSON must be a non-empty array.');
+            }
+            $result = ['connectivity' => ['ok' => true, 'format' => 'non-empty JSON array'], 'item_count' => count($items)];
+            try {
+                $result['inspection'] = (new \ProductImport\Service\FieldInspector())->inspect($this->sampleItem($input, $items));
+            } catch (Throwable $error) {
+                $result['inspection'] = ['error' => $error->getMessage()];
+            }
+            $mapping = [];
+            $mappingError = null;
+            if ($source !== null) {
+                try {
+                    $mapping = json_decode($source['field_mapping'], true, 512, JSON_THROW_ON_ERROR);
+                    if (!is_array($mapping)) {
+                        throw new InvalidArgumentException('Saved field_mapping must be a JSON object.');
+                    }
+                } catch (Throwable $error) {
+                    $mappingError = $error->getMessage();
+                }
+            }
+            foreach (['categories' => 'category_paths', 'brands' => 'manufacturer'] as $section => $target) {
+                try {
+                    if ($source === null) {
+                        $result[$section] = ['skipped' => 'source not saved yet'];
+                    } elseif ($mappingError !== null) {
+                        $result[$section] = ['error' => $mappingError];
+                    } elseif (!isset($mapping[$target]) || $mapping[$target] === '') {
+                        $result[$section] = ['skipped' => 'no saved ' . $target . ' expression'];
+                    } elseif (!is_string($mapping[$target])) {
+                        throw new InvalidArgumentException('Saved ' . $target . ' expression must be a string.');
+                    } elseif (trim($mapping[$target]) === '') {
+                        $result[$section] = ['skipped' => 'no saved ' . $target . ' expression'];
+                    } else {
+                        $result[$section] = $this->discoverValues($items, $idSource, $mapping[$target], $section === 'brands');
+                    }
+                } catch (Throwable $error) {
+                    $result[$section] = ['error' => $error->getMessage()];
+                }
+            }
+        } catch (Throwable $error) {
+            $result = ['error' => $error->getMessage()];
+        }
+        $this->sendJson($result);
+    }
+
+    /** Full-feed scan shared by the existing discovery button and Test source; writes only after deduplication. */
+    private function discoverValues(array $items, int $idSource, string $expression, bool $brands): array
+    {
+        $evaluator = new \ProductImport\Service\ExpressionEvaluator();
+        $normalizer = new \ProductImport\Service\CategoryPathNormalizer();
+        $values = [];
+        $failed = 0;
+        $errors = [];
+        foreach ($items as $index => $item) {
+            try {
+                if (!is_array($item)) {
+                    throw new InvalidArgumentException('Item is not an object.');
+                }
+                $value = $evaluator->evaluate($expression, ['fields' => $item]);
+                if ($brands) {
+                    if ($value !== null && !is_string($value)) {
+                        throw new InvalidArgumentException('Manufacturer must be a string or null.');
+                    }
+                    $name = trim($value ?? '');
+                    if (mb_strlen($name) > 191) {
+                        throw new InvalidArgumentException('Manufacturer name exceeds 191 characters.');
+                    }
+                    if ($name !== '') {
+                        $values['name:' . $name] = $name;
+                    }
+                } else {
+                    foreach ($normalizer->normalize($value) as $path) {
+                        $values[$normalizer->hash($path)] = $path;
+                    }
+                }
+            } catch (Throwable $error) {
+                ++$failed;
+                if (count($errors) < 20) {
+                    $errors[] = 'Item ' . $index . ': ' . mb_substr($error->getMessage(), 0, 500);
+                }
+            }
+        }
+        if ($brands) {
+            $resolver = new \ProductImport\Service\ManufacturerResolver();
+            foreach ($values as $name) {
+                $resolver->discover($name, $idSource);
+            }
+        } else {
+            (new \ProductImport\Service\CategoryResolver(new \ProductImport\Repository\CategoryMappingRepository(), $normalizer))->discover(array_values($values), $idSource);
+        }
+        return [$brands ? 'unique_brands' : 'unique_paths' => count($values), 'items_scanned' => count($items), 'failed_items' => $failed, 'errors' => $errors,
+            'errors_omitted' => max(0, $failed - count($errors)), 'mapping_url' => $this->context->link->getAdminLink($brands ? 'AdminPiManufacturerMap' : 'AdminPiCategoryMap') . '&id_source=' . $idSource];
     }
 
     private function requireSource(string $permission): array

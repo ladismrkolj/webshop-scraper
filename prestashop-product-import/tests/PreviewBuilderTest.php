@@ -32,8 +32,9 @@ class PreviewBuilderTest extends TestCase
             }
         };
         $manufacturers = new class () extends ManufacturerResolver {
-            public function resolve(?string $name, bool $commit = true)
+            public function resolve(?string $name, int $idSource, bool $commit = true)
             {
+                TestCase::assertSame(7, $idSource);
                 TestCase::assertFalse($commit);
                 if ($name === 'failure') {
                     throw new \RuntimeException('Manufacturer lookup failed');

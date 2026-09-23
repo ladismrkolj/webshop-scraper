@@ -9,10 +9,10 @@ Steps 2–6: source configuration, JSON fetching, mapping expressions, filters, 
    - **Name** — any label.
    - **Technical key** — a lowercase slug (letters/numbers/`_`/`-`), unique across sources.
    - **JSON URL** or **JSON file path** — exactly one. A URL is fetched over HTTP(S) at import time; a file path is read directly from disk on the PrestaShop server (e.g. useful if the scraper and PrestaShop share a filesystem/volume).
-   - **Identifier field** — the JSON key that uniquely identifies a product within this source (e.g. `product_id`, `sku`, `url`). Re-imports match on this value to update instead of duplicate.
+   - Leave **Identifier field** blank for now — inspect the JSON before choosing it.
 3. **Save the source once with just those fields filled in** — the mapping/inspect/discover tools below all need a saved `id_source` to work against.
 4. Click **"Inspect sample item"** (defaults to item index 0) to see exactly what fields your JSON actually has, with real example values, e.g. `breadcrumbs[0].title → "Windsurf"`. Use this to decide what expressions to write — no need to go dig through raw JSON externally. Bump the item index or switch to pasting a raw JSON object if item 0 isn't representative.
-5. Fill in **Field mapping** rows: each row is `target field → expression`. The canonical target fields are `name`, `reference`, `price`, `short_description`, `description`, `ean13`, `weight`, `quantity`, `active`, `manufacturer`, `category_paths`, `images`, `main_image` — see "Base-product targets and source options" below for exactly what each does. Every expression sees the whole item as `fields` (e.g. `fields['name']`, `num(fields['price'])`) — see "Expressions" below for the full helper-function list.
+5. Fill in **Identifier field** with the JSON key that uniquely identifies a product within this source (e.g. `product_id`, `sku`, `url`), so re-imports update instead of duplicate. Then fill in **Field mapping** rows: each row is `target field → expression`. The canonical target fields are `name`, `reference`, `price`, `short_description`, `description`, `ean13`, `weight`, `quantity`, `active`, `manufacturer`, `category_paths`, `images`, `main_image` — see "Base-product targets and source options" below for exactly what each does. Every expression sees the whole item as `fields` (e.g. `fields['name']`, `num(fields['price'])`) — see "Expressions" below for the full helper-function list.
 6. If your source has product variants (size/color/etc.), fill in **Optional combinations** — see "Combinations" below.
 7. **Save again.**
 8. Click **"Preview"** to run one real item through the whole pipeline (filter → mapping → category/manufacturer resolution) without writing anything to the database, and confirm the resolved values look right.
@@ -40,6 +40,12 @@ The legacy loader uses `controllers/admin/AdminPiSourceController.php`; this loa
 The editor accepts parallel target/expression rows, preserves failed submissions, rejects duplicate targets and requires a unique lowercase source slug and a URL or file path. Empty mapping rows are ignored. Expression validity is checked at evaluation time so an admin can save work in progress.
 
 Expressions receive `fields` as the complete JSON item. Helpers: `path(fields, 'breadcrumbs.0.title')`, `num(value)`, `str(value)`, `regex('/pattern/', value)`, and `first(list)`. Missing paths return null; `num` accepts PHP numeric values/strings, not localized currency strings. `str` accepts scalars/stringable objects and null; unsupported values and malformed regex patterns become `ExpressionEvaluationException`. Mapping returns `['values' => [...], 'errors' => [target => message]]`, retaining successful fields and assigning null to failed fields. Lists pass through unchanged. Broken filters propagate the same exception; empty/whitespace filters import everything.
+
+Optional **Filter expression** examples to adapt to your JSON (not defaults):
+
+- Only selected categories: `path(fields, 'breadcrumbs.0.title') in ['Windsurf', 'Sails', 'Boards']`
+- Only below a price threshold: `num(fields['price']) < 100`
+- Exclude one brand: `fields['brand'] != 'Nike'`
 
 JSON must have a top-level array; objects and scalar JSON are rejected. A nonempty URL takes precedence over a file path; HTTP failures do not silently fall back to stale files. Only HTTP(S) URLs are fetched, with no redirect following. Local file paths must identify readable regular files.
 

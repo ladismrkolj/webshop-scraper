@@ -301,6 +301,11 @@ class AdminPiSourceController extends ModuleAdminController
         ]);
         $this->context->smarty->assign(['pi_category_url' => $this->context->link->getAdminLink('AdminPiCategoryMap') . '&id_source=' . $id, 'pi_can_discover' => $this->access('edit'), 'pi_preview_id' => $id, 'pi_preview_url' => $this->context->link->getAdminLink('AdminPiSource')]);
         $mappingHtml = $this->context->smarty->fetch(dirname(__DIR__, 3) . '/views/templates/admin/source_form.tpl');
+        $helpTemplate = $this->context->smarty->createTemplate(dirname(__DIR__, 3) . '/views/templates/admin/source_form.tpl');
+        $helpTemplate->assign('pi_help_section', 'identifier');
+        $identifierHelp = $helpTemplate->fetch();
+        $helpTemplate->assign('pi_help_section', 'filter');
+        $filterHelp = $helpTemplate->fetch();
         $inputs = [];
         foreach ([
             'name' => 'Name', 'technical_key' => 'Technical key', 'json_url' => 'JSON URL',
@@ -308,10 +313,11 @@ class AdminPiSourceController extends ModuleAdminController
         ] as $name => $label) {
             $inputs[] = [
                 'type' => 'text', 'label' => $this->trans($label), 'name' => $name,
-                'required' => in_array($name, ['name', 'technical_key', 'identifier_field'], true),
+                'required' => in_array($name, ['name', 'technical_key'], true),
+                'desc' => $name === 'identifier_field' ? $identifierHelp : '',
             ];
         }
-        $inputs[] = ['type' => 'textarea', 'label' => $this->trans('Filter expression'), 'name' => 'filter_expression'];
+        $inputs[] = ['type' => 'textarea', 'label' => $this->trans('Filter expression'), 'name' => 'filter_expression', 'desc' => $filterHelp];
         $inputs[] = ['type' => 'html', 'name' => 'mapping_rows', 'html_content' => $mappingHtml, 'label' => $this->trans('Field mapping')];
         $tree = new HelperTreeCategories('pi-root-category-tree', $this->trans('Root category'));
         $tree->setRootCategory((int) Configuration::get('PS_ROOT_CATEGORY'));
@@ -443,10 +449,13 @@ class AdminPiSourceController extends ModuleAdminController
         if (!in_array($data['id_lang_default'], $languageIds, true)) {
             throw new InvalidArgumentException('Selected source language does not exist.');
         }
-        foreach (['name' => 191, 'technical_key' => 64, 'identifier_field' => 191] as $field => $limit) {
+        foreach (['name' => 191, 'technical_key' => 64] as $field => $limit) {
             if ($data[$field] === '' || Tools::strlen($data[$field]) > $limit) {
                 throw new InvalidArgumentException($field . ' is required and must not exceed ' . $limit . ' characters.');
             }
+        }
+        if (Tools::strlen($data['identifier_field']) > 191) {
+            throw new InvalidArgumentException('identifier_field must not exceed 191 characters.');
         }
         if (!preg_match('/^[a-z0-9]+(?:[_-][a-z0-9]+)*$/D', $data['technical_key'])) {
             throw new InvalidArgumentException('Technical key must be a lowercase slug (letters, numbers, underscores or hyphens).');

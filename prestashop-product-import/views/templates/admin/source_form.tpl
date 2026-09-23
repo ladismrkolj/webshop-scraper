@@ -1,3 +1,11 @@
+{if isset($pi_help_section) && $pi_help_section == 'identifier'}
+The JSON key that uniquely identifies a product (for example product_id or sku), so re-imports update it instead of creating duplicates. Leave blank until you use "Inspect sample item" below to see available JSON fields, then fill it in before running a real import.
+{elseif isset($pi_help_section) && $pi_help_section == 'filter'}
+Optional filter. Examples to adapt to your JSON (not defaults):<br>
+Only selected categories: <code>path(fields, 'breadcrumbs.0.title') in ['Windsurf', 'Sails', 'Boards']</code><br>
+Only below a price threshold: <code>num(fields['price']) &lt; 100</code><br>
+Exclude one brand: <code>fields['brand'] != 'Nike'</code>
+{else}
 {include file='./preview.tpl'}
 <div class="pi-mapping-editor">
   <p class="help-block">Target fields: name, reference, price, short_description, description, ean13, weight, quantity, active, manufacturer, category_paths, images, main_image.</p>
@@ -47,3 +55,4 @@
 }());
 </script>
 {/literal}
+{/if}

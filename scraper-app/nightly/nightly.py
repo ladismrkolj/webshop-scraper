@@ -2,13 +2,14 @@
 """Nightly scrapyd runner.
 
 Deploys every shop project to a local scrapyd, schedules a full-shop crawl of
-each one, waits for them all to finish and leaves one CSV per shop behind:
+each one, waits for them all to finish and leaves one JSON file per shop
+behind:
 
-    nightly/output/recharge_si_2026-08-23_023005.csv
+    nightly/output/recharge_si_2026-08-23_023005.json
 
 Usage:
     python nightly.py deploy          # build + upload an egg per project
-    python nightly.py run             # schedule all shops, wait, write CSVs
+    python nightly.py run             # schedule all shops, wait, write JSON
     python nightly.py run --project recharge_si --project obsession_si
     python nightly.py status          # what scrapyd is doing right now
 """
@@ -16,8 +17,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import ast
-import csv
 import datetime as dt
 import json
 import subprocess
@@ -93,31 +92,6 @@ def list_jobs(base_url: str, project: str) -> dict:
 
 
 # --------------------------------------------------------------------------
-# CSV columns
-
-
-def product_fields(project: str) -> list[str]:
-    """The ProductItem field names of a project, read straight from its
-    ``items.py``.
-
-    Every shop has its own schema, so each gets its own CSV with its own
-    columns. Reading the dataclass rather than letting the CSV exporter infer
-    headers from the first item keeps the columns stable and complete even when
-    the first product happens to leave fields empty.
-    """
-    source = (REPO / project / project / "items.py").read_text()
-    tree = ast.parse(source)
-    for node in tree.body:
-        if isinstance(node, ast.ClassDef) and node.name == "ProductItem":
-            return [
-                stmt.target.id
-                for stmt in node.body
-                if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name)
-            ]
-    raise LookupError(f"no ProductItem dataclass in {project}/items.py")
-
-
-# --------------------------------------------------------------------------
 # commands
 
 
@@ -146,25 +120,26 @@ def cmd_run(args: argparse.Namespace) -> int:
         )
         return 2
 
-    # One timestamp for the whole run, so a night's CSVs sort together and no
-    # run can ever overwrite an earlier one.
+    # One timestamp for the whole run, so a night's JSON files sort together
+    # and no run can ever overwrite an earlier one.
     stamp = dt.datetime.now().strftime("%Y-%m-%d_%H%M%S")
     out_dir = Path(args.output) if args.output else HERE / "output"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     jobs: dict[str, tuple[str, Path]] = {}
     for project in args.project:
-        csv_path = out_dir / f"{project}_{stamp}.csv"
+        json_path = out_dir / f"{project}_{stamp}.json"
         feeds = {
-            str(csv_path): {
-                "format": "csv",
-                "fields": product_fields(project),
+            str(json_path): {
+                "format": "json",
+                "encoding": "utf8",
+                "indent": 2,
             }
         }
         settings = [f"FEEDS={json.dumps(feeds)}"]
         job_id = schedule(args.url, project, settings)
-        jobs[project] = (job_id, csv_path)
-        print(f"[run] scheduled {project} as {job_id} -> {csv_path}", flush=True)
+        jobs[project] = (job_id, json_path)
+        print(f"[run] scheduled {project} as {job_id} -> {json_path}", flush=True)
 
     deadline = time.monotonic() + args.timeout
     pending = set(jobs)
@@ -186,18 +161,18 @@ def cmd_run(args: argparse.Namespace) -> int:
 def report(jobs: dict[str, tuple[str, Path]], unfinished: set[str]) -> int:
     print("\n[summary]")
     problems = False
-    for project, (_, csv_path) in sorted(jobs.items()):
+    for project, (_, json_path) in sorted(jobs.items()):
         if project in unfinished:
             print(f"  {project:<20} DID NOT FINISH")
             problems = True
             continue
-        if not csv_path.exists():
-            print(f"  {project:<20} no CSV written — see nightly/var/logs/{project}/")
+        if not json_path.exists():
+            print(f"  {project:<20} no JSON written — see nightly/var/logs/{project}/")
             problems = True
             continue
-        with csv_path.open(newline="", encoding="utf-8") as handle:
-            rows = max(sum(1 for _ in csv.reader(handle)) - 1, 0)
-        print(f"  {project:<20} {rows:>6} products  {csv_path}")
+        with json_path.open(encoding="utf-8") as handle:
+            rows = len(json.load(handle))
+        print(f"  {project:<20} {rows:>6} products  {json_path}")
         if rows == 0:
             problems = True
     return 1 if problems else 0
@@ -240,7 +215,7 @@ def main(argv: list[str] | None = None) -> int:
         "deploy", parents=[common], help="build and upload an egg for each project"
     ).set_defaults(func=cmd_deploy)
 
-    run = sub.add_parser("run", parents=[common], help="crawl every shop and write one CSV each")
+    run = sub.add_parser("run", parents=[common], help="crawl every shop and write one JSON file each")
     run.add_argument("--output", help="output root (default nightly/output)")
     run.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT_SECONDS)
     run.set_defaults(func=cmd_run)

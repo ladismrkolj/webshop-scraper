@@ -73,11 +73,11 @@ the spider name are always the same.
 ## Nightly run
 
 `nightly/` crawls every shop once a night through a local
-[scrapyd](https://scrapyd.readthedocs.io/) and writes one CSV per shop,
+[scrapyd](https://scrapyd.readthedocs.io/) and writes one JSON file per shop,
 stamped with the run's date and time so nothing is ever overwritten:
 
 ```
-nightly/output/recharge_si_2026-08-23_023005.csv
+nightly/output/recharge_si_2026-08-23_023005.json
 ```
 
 All shops in one run share a single timestamp, so a night's files sort
@@ -125,7 +125,7 @@ cd ~/webshop-scraper/nightly && ./run_nightly.sh
 ```
 
 A container needs **outbound HTTPS to the shops and to PyPI**, and enough disk
-for the environments (~1 GB) plus the CSVs. 1 vCPU and 1 GB RAM are enough —
+for the environments (~1 GB) plus the JSON output. 1 vCPU and 1 GB RAM are enough —
 the crawls are rate-limited to one request per second per domain, so they are
 waiting on the network, not on the CPU.
 
@@ -169,11 +169,11 @@ does it for you) after any change to a page object — scrapyd otherwise keeps
 crawling the egg it already has.
 
 A run ends with a summary and exits non-zero if any shop timed out or produced
-an empty CSV, which is what makes a cron failure mail worth reading:
+an empty JSON file, which is what makes a cron failure mail worth reading:
 
 ```
 [summary]
-  easy_surfshop_com       412 products  /home/you/webshop-scraper/nightly/output/easy_surfshop_com_2026-08-23_023005.csv
+  easy_surfshop_com       412 products  /home/you/webshop-scraper/nightly/output/easy_surfshop_com_2026-08-23_023005.json
   infinitysport_si        377 products  ...
   recharge_si             DID NOT FINISH
 ```
@@ -186,7 +186,7 @@ uv run python nightly.py status             # pending/running/finished per shop
 tail -f var/nightly-cron.log                # last night's summary, as cron saw it
 tail -f var/logs/recharge_si/recharge_si/*.log   # one crawl's Scrapy log
 tail -f var/scrapyd.log                     # the daemon itself
-ls -lt output/ | head                       # newest CSVs first
+ls -lt output/ | head                       # newest JSON files first
 ```
 
 Scrapyd also has a small web UI with the job list and links to every log, at
@@ -212,7 +212,7 @@ object broke.
 | How long before a wedged crawl is abandoned | `DEFAULT_TIMEOUT_SECONDS` in `nightly/nightly.py`, or `--timeout` |
 | How many shops crawl at once, log retention, port | `nightly/scrapyd.conf` (`max_proc`, `jobs_to_keep`, `http_port`) |
 | Politeness, User-Agent, robots.txt for one shop | that project's `<shop>/<shop>/settings.py` |
-| CSV columns | that project's `items.py` — the `ProductItem` fields *are* the columns |
+| JSON fields | that project's `items.py` — the `ProductItem` fields *are* the keys |
 | Zyte API | `export ZYTE_API_KEY=…` before the run (see below) |
 
 Changing `http_port` means passing `--url http://127.0.0.1:<port>` to
@@ -225,23 +225,25 @@ since without `ZYTE_API_KEY` it only collects 429s (see below). Add it with
 
 ### Output
 
-Each shop has its own item schema, so each gets its own CSV. The columns come
-from that project's `ProductItem` dataclass rather than from whatever the first
-scraped product happened to fill in, so the header is stable and complete even
-across nights where different fields are empty. To add or drop a column, edit
-the dataclass (and the page object that fills it) — the CSV follows.
+Each shop has its own item schema, so each gets its own JSON file — a JSON
+array of objects, one per product. The keys come from that project's
+`ProductItem` dataclass rather than from whatever the first scraped product
+happened to fill in, so every object has the same keys and is stable and
+complete even across nights where different fields are empty. To add or drop
+a field, edit the dataclass (and the page object that fills it) — the JSON
+follows.
 
 ```bash
 cd nightly/output
-column -s, -t < recharge_si_2026-08-23_023005.csv | less -S   # eyeball a run
-ls recharge_si_*.csv                                          # every night, oldest first
+python3 -m json.tool recharge_si_2026-08-23_023005.json | less   # eyeball a run
+ls recharge_si_*.json                                             # every night, oldest first
 ```
 
-Nothing prunes `output/`, so it grows by one CSV per shop per night. Drop
-something like this in cron if that matters:
+Nothing prunes `output/`, so it grows by one JSON file per shop per night.
+Drop something like this in cron if that matters:
 
 ```bash
-find ~/webshop-scraper/nightly/output -name '*.csv' -mtime +90 -delete
+find ~/webshop-scraper/nightly/output -name '*.json' -mtime +90 -delete
 ```
 
 `--output DIR` writes elsewhere — a mounted share, say — without touching the

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # One night's work: make sure scrapyd is up, redeploy every shop project, crawl
-# them all, write one timestamped CSV per shop under nightly/output/.
+# them all, write one timestamped JSON file per shop under nightly/output/.
 #
 # This is what cron calls. Safe to run by hand at any time.
 set -euo pipefail

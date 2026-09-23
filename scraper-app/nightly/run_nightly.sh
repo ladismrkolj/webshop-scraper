@@ -8,10 +8,11 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 # cron runs with a bare PATH (/usr/bin:/bin), so uv — which installs into
-# ~/.local/bin — is not on it. Find it and put its directory on PATH, so both
+# ~/.local/bin, or /opt/homebrew/bin (Apple Silicon) / /usr/local/bin (Intel)
+# via Homebrew — is not on it. Find it and put its directory on PATH, so both
 # this script and the `uv` that nightly.py shells out to for deploys resolve.
 if ! command -v uv >/dev/null 2>&1; then
-    for candidate in "${UV_BIN_DIR:-/nonexistent}/uv" "$HOME/.local/bin/uv" /usr/local/bin/uv /opt/uv/bin/uv "$HOME/.cargo/bin/uv"; do
+    for candidate in "${UV_BIN_DIR:-/nonexistent}/uv" "$HOME/.local/bin/uv" /opt/homebrew/bin/uv /usr/local/bin/uv /opt/uv/bin/uv "$HOME/.cargo/bin/uv"; do
         if [ -x "$candidate" ]; then
             PATH="$(dirname "$candidate"):$PATH"
             export PATH

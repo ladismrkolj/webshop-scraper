@@ -172,7 +172,9 @@ class AdminPiSourceController extends AdminController
             ];
         }
 
-        return $helper->generateList($this->sources->findAll(), [
+        $cronUrl = $this->context->link->getModuleLink('productimport', 'cron', ['token' => Configuration::get('PIIMPORT_CRON_TOKEN')], true);
+        $banner = '<div class="alert alert-info">Daily cron URL: <code>' . Tools::safeOutput($cronUrl) . '</code></div>';
+        return $banner . $helper->generateList($this->sources->findAll(), [
             'name' => ['title' => $this->l('Name')],
             'technical_key' => ['title' => $this->l('Technical key')],
             'active' => ['title' => $this->l('Active'), 'type' => 'bool'],
@@ -247,7 +249,7 @@ class AdminPiSourceController extends AdminController
             'type' => 'select', 'name' => 'id_lang_default', 'label' => $this->l('Source language'),
             'options' => ['query' => Language::getLanguages(false), 'id' => 'id_lang', 'name' => 'name'],
         ];
-        foreach (['active' => 'Active', 'price_tax_included' => 'Prices include tax', 'deactivate_missing' => 'Deactivate missing products (reserved)'] as $field => $label) {
+        foreach (['active' => 'Active', 'price_tax_included' => 'Prices include tax', 'deactivate_missing' => 'Deactivate missing products'] as $field => $label) {
             $inputs[] = [
                 'type' => 'switch', 'name' => $field, 'label' => $this->l($label), 'is_bool' => true,
                 'values' => [
@@ -256,7 +258,7 @@ class AdminPiSourceController extends AdminController
                 ],
                 'desc' => $field === 'price_tax_included'
                     ? $this->l('Tax conversion is not implemented yet: prices are currently stored unchanged.')
-                    : ($field === 'deactivate_missing' ? $this->l('Saved for future cron orchestration; currently has no effect.') : ''),
+                    : ($field === 'deactivate_missing' ? $this->l('After a successful fetch, untouched products are deactivated and untouched combinations receive zero stock.') : ''),
             ];
         }
         $helper = new HelperForm();

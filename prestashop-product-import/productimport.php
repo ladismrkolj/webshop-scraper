@@ -12,7 +12,7 @@ class ProductImport extends Module
     {
         $this->name = 'productimport';
         $this->tab = 'administration';
-        $this->version = '0.4.0';
+        $this->version = '0.6.0';
         $this->author = 'Product Import';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -66,6 +66,7 @@ class ProductImport extends Module
             `id_source` INT UNSIGNED NOT NULL,
             `external_id` VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
             `id_product` INT UNSIGNED NOT NULL,
+            `id_run_last_seen` INT UNSIGNED NULL,
             `date_upd` DATETIME NOT NULL,
             PRIMARY KEY (`id_source`, `external_id`)
         ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4')) {
@@ -76,32 +77,60 @@ class ProductImport extends Module
             `external_id` VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
             `id_product_attribute` INT UNSIGNED NOT NULL,
             `id_product` INT UNSIGNED NOT NULL,
+            `id_run_last_seen` INT UNSIGNED NULL,
             `date_upd` DATETIME NOT NULL,
             PRIMARY KEY (`id_source`, `external_id`)
         ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4')) {
             return false;
         }
-        $tab = new Tab();
-        $tab->active = 1;
-        $tab->class_name = 'AdminPiSource';
-        $tab->module = $this->name;
-        $tab->id_parent = (int) Tab::getIdFromClassName('AdminCatalog');
-        foreach (Language::getLanguages(false) as $language) {
-            $tab->name[(int) $language['id_lang']] = 'Product Import';
+        if (!Db::getInstance()->execute('CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'pi_import_run` (
+            `id_run` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `id_source` INT UNSIGNED NOT NULL,
+            `started_at` DATETIME NOT NULL,
+            `finished_at` DATETIME NULL,
+            `status` VARCHAR(32) NOT NULL,
+            `created_count` INT UNSIGNED NOT NULL DEFAULT 0,
+            `updated_count` INT UNSIGNED NOT NULL DEFAULT 0,
+            `skipped_count` INT UNSIGNED NOT NULL DEFAULT 0,
+            `failed_count` INT UNSIGNED NOT NULL DEFAULT 0,
+            `error_log` LONGTEXT NULL,
+            PRIMARY KEY (`id_run`), KEY `source_run` (`id_source`, `id_run`)
+        ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4')) {
+            return false;
         }
-
-        return $tab->add();
+        if (!Configuration::updateValue('PIIMPORT_CRON_TOKEN', bin2hex(random_bytes(20)))) {
+            return false;
+        }
+        foreach (['AdminPiSource' => 'Product Import', 'AdminPiRunLog' => 'Product Import runs'] as $class => $title) {
+            $tab = new Tab();
+            $tab->active = 1;
+            $tab->class_name = $class;
+            $tab->module = $this->name;
+            $tab->id_parent = (int) Tab::getIdFromClassName('AdminCatalog');
+            foreach (Language::getLanguages(false) as $language) {
+                $tab->name[(int) $language['id_lang']] = $title;
+            }
+            if (!$tab->add()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public function uninstall()
     {
-        foreach (['pi_external_combination', 'pi_external_product', 'pi_category_mapping', 'pi_source'] as $table) {
+        foreach (['pi_import_run', 'pi_external_combination', 'pi_external_product', 'pi_category_mapping', 'pi_source'] as $table) {
             if (!Db::getInstance()->execute('DROP TABLE IF EXISTS `' . _DB_PREFIX_ . $table . '`')) {
                 return false;
             }
         }
-        $idTab = (int) Tab::getIdFromClassName('AdminPiSource');
-        if ($idTab && !(new Tab($idTab))->delete()) {
+        foreach (['AdminPiRunLog', 'AdminPiSource'] as $class) {
+            $idTab = (int) Tab::getIdFromClassName($class);
+            if ($idTab && !(new Tab($idTab))->delete()) {
+                return false;
+            }
+        }
+        if (!Configuration::deleteByName('PIIMPORT_CRON_TOKEN')) {
             return false;
         }
 

@@ -6,8 +6,10 @@
   <label>JSON object <textarea class="pi-raw" rows="5"></textarea></label>
   <button type="button" class="btn btn-default pi-test-source">Test source</button>
   <div class="pi-source-results" aria-live="polite"></div>
+</div>
+<div id="pi-configuration-panel">
   <h3>Test configuration</h3>
-  <p>Save changes first. Tests the saved filter, mappings and resolutions without writing catalog data. Uses the same item controls above; at most five variants are shown.</p>
+  <p>Save changes first. Tests the saved filter, mappings and resolutions without writing catalog data. Uses the item index/raw JSON controls in General; at most five variants are shown.</p>
   <button type="button" class="btn btn-default pi-preview-button" {if !$pi_preview_id}disabled{/if}>Test configuration</button>
   {if !$pi_preview_id}<p>Save the source to enable Test configuration.</p>{/if}
   {if $pi_preview_id}<p><a href="{$pi_category_url|escape:'html':'UTF-8'}">Category mappings →</a> | <a href="{$pi_manufacturer_url|escape:'html':'UTF-8'}">Brand mappings →</a></p>{/if}

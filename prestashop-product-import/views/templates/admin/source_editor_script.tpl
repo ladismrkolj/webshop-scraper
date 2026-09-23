@@ -137,10 +137,10 @@
       }
     }
     var test = panel.querySelector('.pi-test-source');
-    var configuration = panel.querySelector('.pi-preview-button');
+    var configuration = form.querySelector('.pi-preview-button');
     function request(action, clicked) {
       var sourceTest = action === 'testSource';
-      var output = panel.querySelector(sourceTest ? '.pi-source-results' : '.pi-config-results');
+      var output = form.querySelector(sourceTest ? '.pi-source-results' : '.pi-config-results');
       clicked.disabled = true;
       output.textContent = 'Testing…';
       if (sourceTest) populate([]);

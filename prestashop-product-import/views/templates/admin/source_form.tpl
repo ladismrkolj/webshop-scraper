@@ -6,6 +6,15 @@ Only selected categories: <code>path(fields, 'breadcrumbs.0.title') in ['Windsur
 Only below a price threshold: <code>num(fields['price']) &lt; 100</code><br>
 Exclude one brand: <code>fields['brand'] != 'Nike'</code>
 {else}
+<div id="pi-source-tabs">
+  <ul class="nav nav-tabs" role="tablist">
+    <li class="active" role="presentation"><a id="pi-general-link" href="#pi-general" role="tab" aria-controls="pi-general" aria-selected="true" data-toggle="tab">General</a></li>
+    <li role="presentation"><a id="pi-products-link" href="#pi-products" role="tab" aria-controls="pi-products" aria-selected="false" data-toggle="tab">Product fields</a></li>
+    <li role="presentation"><a id="pi-combinations-link" href="#pi-combinations" role="tab" aria-controls="pi-combinations" aria-selected="false" data-toggle="tab">Combinations</a></li>
+  </ul>
+  <div class="tab-content">
+    <div id="pi-general" class="tab-pane active" role="tabpanel" aria-labelledby="pi-general-link"></div>
+    <div id="pi-products" class="tab-pane" role="tabpanel" aria-labelledby="pi-products-link">
 <div id="pi-fixed-mappings">
   <p class="help-block">Choose a source field to replace an expression, or select a field to insert at the cursor. Expressions are always editable; blank rows are not saved.</p>
   <p class="help-block">category_paths expects a list of paths, for example [fields['breadcrumbs']]. images expects a list of URLs; main_image defaults to its first entry. Container fields are included in the selectors.</p>
@@ -28,6 +37,8 @@ Exclude one brand: <code>fields['brand'] != 'Nike'</code>
 <h3>Custom fields</h3>
 <p class="help-block">Use custom rows for targets outside the fixed list above.</p>
 {include file='./mapping_rows.tpl' rows=$pi_mapping_rows prefix='field_mapping' heading='Custom target field' add_label='+ Add custom field'}
+    </div>
+    <div id="pi-combinations" class="tab-pane" role="tabpanel" aria-labelledby="pi-combinations-link">
 <h3>Optional combinations</h3>
 <label for="pi-variants-expression">Variants expression</label>
 <input id="pi-variants-expression" type="text" name="variants_expression" value="{$pi_variants_expression|escape:'html':'UTF-8'}">
@@ -35,6 +46,10 @@ Exclude one brand: <code>fields['brand'] != 'Nike'</code>
 {include file='./mapping_rows.tpl' rows=$pi_attribute_rows prefix='variant_attribute' heading='Attribute name'}
 <p class="help-block">Variant fields: reference, ean13, price (absolute), quantity, active, image. active=false sets zero stock; it does not hide the combination.</p>
 {include file='./mapping_rows.tpl' rows=$pi_variant_field_rows prefix='variant_field' heading='Variant target field'}
+    </div>
+  </div>
+</div>
+{include file='./source_tabs_script.tpl'}
 {literal}
 <script>
 (function () {

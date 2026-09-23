@@ -438,7 +438,7 @@ class AdminPiSourceController extends ModuleAdminController
             ];
         }
         $inputs[] = ['type' => 'textarea', 'label' => $this->trans('Filter expression'), 'name' => 'filter_expression', 'desc' => $filterHelp];
-        $inputs[] = ['type' => 'html', 'name' => 'mapping_rows', 'html_content' => $mappingHtml, 'label' => $this->trans('Field mapping')];
+        $inputs[] = ['type' => 'html', 'name' => 'mapping_rows', 'html_content' => $mappingHtml];
         $tree = new HelperTreeCategories('pi-root-category-tree', $this->trans('Root category'));
         $tree->setRootCategory((int) Configuration::get('PS_ROOT_CATEGORY'));
         $tree->setInputName('root_category_id');

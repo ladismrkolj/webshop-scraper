@@ -359,18 +359,21 @@ class ProductPage(WebPage, Returns[ProductItem]):
 
     @field
     def specification_table(self) -> list[dict] | None:
-        rows = self.css("table.flip-content tr")
-        if not rows:
-            return None
-        headers = [_norm(h) for h in rows[0].css("th::text").getall()]
-        if not any(headers):
-            return None
         table = []
-        for row in rows[1:]:
-            values = [_norm(v) for v in row.css("td::text").getall()]
-            if not values:
-                continue
-            table.append(dict(zip(headers, values)))
+        for element in self.css("table.flip-content"):
+            headers = []
+            for row in element.css("tr"):
+                labels = [_norm(cell.xpath("string(.)").get()) for cell in row.css("th")]
+                values = [_norm(cell.xpath("string(.)").get()) for cell in row.css("td")]
+                if labels and not values:
+                    # Shared column headers (e.g. board specs and size charts).
+                    headers = labels
+                elif len(labels) == len(values) == 1:
+                    # A separate label/value pair on every row (e.g. boardbags).
+                    if labels[0] and values[0] is not None:
+                        table.append({labels[0]: values[0]})
+                elif not labels and values and any(headers):
+                    table.append(dict(zip(headers, values)))
         return table or None
 
     # ------------------------------------------------------------------

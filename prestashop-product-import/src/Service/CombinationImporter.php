@@ -75,9 +75,6 @@ class CombinationImporter
                     throw new \RuntimeException('Unable to associate combination image.');
                 }
             } catch (\Throwable $error) {
-                if ($idImage !== null) {
-                    (new \Image($idImage))->delete();
-                }
                 \PrestaShopLogger::addLog('Combination image skipped: ' . $error->getMessage(), 2, null, 'Product', $idProduct);
             }
         }

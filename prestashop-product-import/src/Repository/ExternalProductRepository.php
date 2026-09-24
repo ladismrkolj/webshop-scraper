@@ -4,6 +4,19 @@ namespace ProductImport\Repository;
 
 class ExternalProductRepository
 {
+    public function findLinkedProductIds(?int $idSource = null): array
+    {
+        $query = 'SELECT DISTINCT `id_product` FROM `' . _DB_PREFIX_ . 'pi_external_product`';
+        if ($idSource !== null) {
+            $query .= ' WHERE `id_source` = ' . (int) $idSource;
+        }
+        $rows = \Db::getInstance()->executeS($query . ' ORDER BY `id_product`');
+        if ($rows === false) {
+            throw new \RuntimeException('Unable to find linked products.');
+        }
+        return array_map('intval', array_column($rows, 'id_product'));
+    }
+
     public function findProductId(int $idSource, string $externalId): ?int
     {
         $id = \Db::getInstance()->getValue(

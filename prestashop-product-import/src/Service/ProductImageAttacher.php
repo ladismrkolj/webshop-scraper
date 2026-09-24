@@ -4,6 +4,8 @@ namespace ProductImport\Service;
 
 class ProductImageAttacher
 {
+    private static array $fingerprints = [];
+
     public function attach(int $idProduct, string $url): int
     {
         $temporary = tempnam(_PS_TMP_IMG_DIR_, 'pi_');
@@ -13,6 +15,20 @@ class ProductImageAttacher
         $image = null;
         try {
             $this->downloadImage($url, $temporary);
+            $fingerprint = (new ImageFingerprint())->fromFile($temporary);
+            if ($fingerprint !== null) {
+                try {
+                    $known = $this->existingFingerprints($idProduct);
+                    $comparator = new ImageFingerprint();
+                    foreach ($known as $idImage => $existing) {
+                        if ($comparator->isSame($fingerprint, $existing)) {
+                            return $idImage;
+                        }
+                    }
+                } catch (\Throwable $error) {
+                    // A failed lookup must not prevent the existing attachment flow.
+                }
+            }
             $image = new \Image();
             $image->id_product = $idProduct;
             $image->position = (int) \Image::getHighestPosition($idProduct) + 1;
@@ -30,6 +46,9 @@ class ProductImageAttacher
                     throw new \RuntimeException('Unable to generate product image thumbnail.');
                 }
             }
+            if ($fingerprint !== null) {
+                self::$fingerprints[$idProduct][(int) $image->id] = $fingerprint;
+            }
             return (int) $image->id;
         } catch (\Throwable $error) {
             if ($image !== null && $image->id) {
@@ -39,6 +58,32 @@ class ProductImageAttacher
         } finally {
             unlink($temporary);
         }
+    }
+
+    private function existingFingerprints(int $idProduct): array
+    {
+        $idLang = (int) \Context::getContext()->language->id;
+        $images = \Image::getImages($idLang, $idProduct);
+        if (!is_array($images)) {
+            return [];
+        }
+        $current = [];
+        $fingerprinter = new ImageFingerprint();
+        foreach ($images as $row) {
+            $idImage = (int) $row['id_image'];
+            $path = _PS_PRODUCT_IMG_DIR_ . \Image::getImgFolderStatic($idImage) . $idImage . '.jpg';
+            if (!is_readable($path)) {
+                unset(self::$fingerprints[$idProduct][$idImage]);
+                continue;
+            }
+            if (!array_key_exists($idImage, self::$fingerprints[$idProduct] ?? [])) {
+                self::$fingerprints[$idProduct][$idImage] = $fingerprinter->fromFile($path);
+            }
+            if (self::$fingerprints[$idProduct][$idImage] !== null) {
+                $current[$idImage] = self::$fingerprints[$idProduct][$idImage];
+            }
+        }
+        return $current;
     }
 
     private function downloadImage(string $url, string $destination): void

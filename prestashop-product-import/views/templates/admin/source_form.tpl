@@ -1,6 +1,4 @@
-{if isset($pi_help_section) && $pi_help_section == 'identifier'}
-The JSON key that uniquely identifies a product (for example product_id or sku), so re-imports update it instead of creating duplicates. Leave blank until you use "Test source" above to see available JSON fields, then fill it in before running a real import.
-{elseif isset($pi_help_section) && $pi_help_section == 'filter'}
+{if isset($pi_help_section) && $pi_help_section == 'filter'}
 Optional filter. Examples to adapt to your JSON (not defaults):<br>
 Only selected categories: <code>path(fields, 'breadcrumbs.0.title') in ['Windsurf', 'Sails', 'Boards']</code><br>
 Only below a price threshold: <code>num(fields['price']) &lt; 100</code><br>
@@ -65,7 +63,7 @@ Exclude one brand: <code>fields['brand'] != 'Nike'</code>
   </div>
 </section>
     </div>
-    <div id="pi-categories" class="tab-pane" role="tabpanel" aria-labelledby="pi-categories-link"></div>
+    <div id="pi-categories" class="tab-pane" role="tabpanel" aria-labelledby="pi-categories-link"><div id="pi-category-root"></div><div id="pi-category-mappings"></div></div>
     <div id="pi-brands" class="tab-pane" role="tabpanel" aria-labelledby="pi-brands-link"></div>
   </div>
 </div>

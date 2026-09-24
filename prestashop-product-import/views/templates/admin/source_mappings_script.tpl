@@ -85,7 +85,7 @@
       }).catch(function (error) { state.pane.textContent = error.message; }).then(function () { state.loading = false; });
     }
     ['category', 'brand'].forEach(function (type) {
-      var pane = document.getElementById(type === 'category' ? 'pi-categories' : 'pi-brands');
+      var pane = document.getElementById(type === 'category' ? 'pi-category-mappings' : 'pi-brands');
       states[type] = {pane: pane, loaded: false, loading: false};
       if (!id) pane.textContent = 'Save the source first.';
     });

@@ -41,7 +41,7 @@ class SourceRepository
                 throw new \InvalidArgumentException('Missing source property: ' . $required);
             }
         }
-        $data += ['active' => 1, 'root_category_id' => null, 'id_lang_default' => 1, 'price_tax_included' => 0, 'deactivate_missing' => 0];
+        $data += ['active' => 1, 'root_category_id' => null, 'id_lang_default' => 1, 'deactivate_missing' => 0];
         $assignments = $this->assignments($data);
         $now = pSQL(date('Y-m-d H:i:s'));
         $assignments[] = "`date_add` = '" . $now . "'";
@@ -85,7 +85,7 @@ class SourceRepository
             // Preserve expression operators and JSON/HTML content while escaping SQL.
             $assignments[] = '`' . $column . "` = '" . pSQL($data[$column], true) . "'";
         }
-        foreach (['active', 'price_tax_included', 'deactivate_missing'] as $column) {
+        foreach (['active', 'deactivate_missing'] as $column) {
             if (array_key_exists($column, $data)) {
                 $assignments[] = '`' . $column . '` = ' . (int) (bool) $data[$column];
             }

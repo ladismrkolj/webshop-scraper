@@ -16,6 +16,8 @@
     var variantChoices = [], listChoices = [];
     var identifier = form.querySelector('[name="identifier_field"]');
     var identifierPicker = document.getElementById('pi-identifier-picker');
+    var identifierTouched = false;
+    var identifierChoice = '';
     var choices = [];
     // Retained for all selectors: testing a configuration does not refetch/replace this list.
     window.piSourceFields = [];
@@ -146,15 +148,21 @@
       updateLists();
       fill(identifierPicker, choices.filter(function (choice) { return choice.parts.length === 1; }).map(function (choice) {
         return {label: choice.label, value: String(choice.parts[0])};
-      }), 'Choose a source field', false);
-      identifierPicker.disabled = !choices.length;
+      }), '— choose —', false);
+      identifierPicker.add(new Option('Other key…', '__other__'));
+      var selectedIdentifier = identifierTouched ? identifierChoice : identifier.value;
+      identifierPicker.value = selectedIdentifier === '' ? '' :
+        Array.from(identifierPicker.options).some(function (option) { return option.value === selectedIdentifier; }) ? selectedIdentifier : '__other__';
+      identifier.style.display = identifierPicker.value === '__other__' ? '' : 'none';
     }
     identifierPicker.addEventListener('change', function () {
-      if (this.value !== '') {
-        identifier.value = this.value;
-        identifier.dispatchEvent(new Event('input', {bubbles: true}));
-      }
+      identifierTouched = true;
+      identifierChoice = this.value;
+      if (this.value !== '__other__') identifier.value = this.value;
+      identifier.style.display = this.value === '__other__' ? '' : 'none';
+      if (this.value === '__other__') identifier.focus();
     });
+    identifier.addEventListener('input', function () { identifierTouched = true; identifierChoice = '__other__'; });
     fixed.forEach(function (row) {
       var textarea = row.querySelector('textarea');
       var target = row.querySelector('.pi-fixed-target');

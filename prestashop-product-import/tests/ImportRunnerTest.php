@@ -79,7 +79,7 @@ class ImportRunnerTest extends TestCase
             public function __construct()
             {
             }
-            public function import(int $source, string $external, array $values, array $categories, ?int $manufacturer, int $language, bool $tax): int
+            public function import(int $source, string $external, array $values, array $categories, ?int $manufacturer, int $language): int
             {
                 if ($external === 'broken') {
                     throw new \RuntimeException('save failed');
@@ -155,7 +155,7 @@ class ImportRunnerTest extends TestCase
 
     private function source(array $overrides = []): array
     {
-        return $overrides + ['id_source' => 1, 'default_id_category' => 23, 'default_id_manufacturer' => 24, 'active' => 1, 'identifier_field' => 'id', 'id_lang_default' => 1, 'price_tax_included' => false,
+        return $overrides + ['id_source' => 1, 'default_id_category' => 23, 'default_id_manufacturer' => 24, 'active' => 1, 'identifier_field' => 'id', 'id_lang_default' => 1,
             'field_mapping' => ['name' => '"Board"', 'category_paths' => '["Boards"]'], 'filter_expression' => 'path(fields, "skip") != true', 'deactivate_missing' => false];
     }
 

@@ -19,8 +19,7 @@ class ProductImporter
         array $mappedValues,
         array $categoryIds,
         ?int $idManufacturer,
-        int $idLangDefault,
-        bool $priceTaxIncluded
+        int $idLangDefault
     ): int {
         if ($externalId === '' || \Tools::strlen($externalId) > 191) {
             throw new \InvalidArgumentException('External product ID must contain 1 to 191 characters.');
@@ -59,10 +58,6 @@ class ProductImporter
             }
         }
         if (isset($mappedValues['price'])) {
-            if ($priceTaxIncluded) {
-                // TODO: Convert to tax-exclusive using the shop's configured tax rules group, not wired up yet.
-                // Until then this stores the mapped tax-included price unchanged in Product::price.
-            }
             $product->price = (float) $mappedValues['price'];
         }
         $product->weight = (float) ($mappedValues['weight'] ?? 0.0);

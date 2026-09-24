@@ -13,11 +13,12 @@
     var group = tabs.closest('.form-group');
     var wrapper = group.parentElement;
     var general = document.getElementById('pi-general');
+    var categoryRoot = document.getElementById('pi-category-root');
     var product = document.getElementById('pi-products');
     var config = document.getElementById('pi-configuration-panel');
     // Move existing nodes, never clone them: values, IDs, names and listeners survive.
     product.appendChild(config);
-    var controls = ['name', 'technical_key', 'json_url', 'json_file_path', 'identifier_field', 'filter_expression', 'id_lang_default', 'active', 'price_tax_included', 'deactivate_missing'];
+    var controls = ['name', 'technical_key', 'json_url', 'json_file_path', 'identifier_field', 'filter_expression', 'id_lang_default', 'active', 'deactivate_missing'];
     var selected = new Set();
     function selectGroup(element) {
       if (!element) return;
@@ -25,8 +26,11 @@
       if (element.parentElement === wrapper && element !== group && element.classList.contains('form-group')) selected.add(element);
     }
     controls.forEach(function (name) { selectGroup(form.querySelector('[name="' + name + '"]')); });
-    ['pi-preview', 'pi-identifier-picker', 'pi-root-category-tree'].forEach(function (id) { selectGroup(document.getElementById(id)); });
+    ['pi-preview', 'pi-identifier-picker'].forEach(function (id) { selectGroup(document.getElementById(id)); });
     Array.from(wrapper.children).forEach(function (element) { if (selected.has(element)) general.appendChild(element); });
+    var tree = document.getElementById('pi-root-category-tree');
+    selectGroup(tree);
+    if (tree) categoryRoot.appendChild(Array.from(wrapper.children).find(function (element) { return selected.has(element); }));
     var links = Array.from(tabs.querySelectorAll('.nav-tabs a'));
     var panes = Array.from(tabs.querySelector('.tab-content').children);
     var storageKey = 'productimport-tab:' + location.pathname + ':' + document.getElementById('pi-preview').dataset.source;

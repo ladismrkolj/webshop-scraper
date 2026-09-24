@@ -42,7 +42,6 @@ class ProductImport extends Module
             `default_id_category` INT UNSIGNED NULL,
             `default_id_manufacturer` INT UNSIGNED NULL,
             `id_lang_default` INT UNSIGNED NOT NULL DEFAULT 1,
-            `price_tax_included` TINYINT(1) NOT NULL DEFAULT 0,
             `deactivate_missing` TINYINT(1) NOT NULL DEFAULT 0,
             `date_add` DATETIME NOT NULL,
             `date_upd` DATETIME NOT NULL,

@@ -443,7 +443,7 @@ class AdminPiSourceController extends ModuleAdminController
         $source += [
             'name' => '', 'technical_key' => '', 'json_url' => '', 'json_file_path' => '',
             'identifier_field' => '', 'filter_expression' => '', 'field_mapping' => '{}', 'active' => 1,
-            'variant_mapping' => null, 'root_category_id' => null, 'id_lang_default' => 1, 'price_tax_included' => 0, 'deactivate_missing' => 0,
+            'variant_mapping' => null, 'root_category_id' => null, 'id_lang_default' => 1, 'deactivate_missing' => 0,
         ];
         $mapping = json_decode($source['field_mapping'], true);
         $rows = $this->submittedMapping;
@@ -487,8 +487,6 @@ class AdminPiSourceController extends ModuleAdminController
         $testHtml = $this->context->smarty->fetch(dirname(__DIR__, 3) . '/views/templates/admin/preview.tpl');
         $mappingHtml = $this->context->smarty->fetch(dirname(__DIR__, 3) . '/views/templates/admin/source_form.tpl');
         $helpTemplate = $this->context->smarty->createTemplate(dirname(__DIR__, 3) . '/views/templates/admin/source_form.tpl');
-        $helpTemplate->assign('pi_help_section', 'identifier');
-        $identifierHelp = $helpTemplate->fetch();
         $helpTemplate->assign('pi_help_section', 'filter');
         $filterHelp = $helpTemplate->fetch();
         $inputs = [];
@@ -498,12 +496,15 @@ class AdminPiSourceController extends ModuleAdminController
         ] as $name => $label) {
             if ($name === 'identifier_field') {
                 $inputs[] = ['type' => 'html', 'name' => 'source_test', 'html_content' => $testHtml];
-                $inputs[] = ['type' => 'html', 'name' => 'identifier_picker', 'label' => $this->trans('Identifier source field'), 'html_content' => '<select id="pi-identifier-picker" disabled aria-label="Identifier source field"><option value="">Run Test source above to populate</option></select><p class="help-block">Choose a top-level JSON key. The raw identifier below stays editable.</p>'];
+                $inputs[] = ['type' => 'html', 'name' => 'identifier_control', 'label' => $this->trans('Identifier field'), 'html_content' => '<select id="pi-identifier-picker" aria-label="Identifier field"><option value="">— choose —</option><option value="__other__">Other key…</option></select><input type="text" name="identifier_field" id="identifier_field" value="' . htmlspecialchars((string) $source['identifier_field'], ENT_QUOTES, 'UTF-8') . '" aria-label="Other identifier key" style="display:none"><p class="help-block">Choose a top-level JSON key or enter another key.</p>'];
+            }
+            if ($name === 'identifier_field') {
+                continue;
             }
             $inputs[] = [
                 'type' => 'text', 'label' => $this->trans($label), 'name' => $name, 'id' => $name,
                 'required' => in_array($name, ['name', 'technical_key'], true),
-                'desc' => $name === 'identifier_field' ? $identifierHelp : '',
+                'desc' => '',
             ];
         }
         $inputs[] = ['type' => 'textarea', 'label' => $this->trans('Filter expression'), 'name' => 'filter_expression', 'desc' => $filterHelp];
@@ -517,22 +518,20 @@ class AdminPiSourceController extends ModuleAdminController
         $inputs[] = [
             'type' => 'html', 'name' => 'root_category_tree', 'label' => $this->trans('Root category'),
             'html_content' => $tree->render() . '<button type="button" class="btn btn-default" onclick="document.querySelectorAll(&quot;[name=root_category_id]&quot;).forEach(function (input) { input.checked = false; });">Use shop root</button>',
-            'desc' => $this->trans('Leave unselected to create category chains under the shop root category.'),
+            'desc' => $this->trans('Auto-created categories are placed under this category.'),
         ];
         $inputs[] = [
             'type' => 'select', 'name' => 'id_lang_default', 'label' => $this->trans('Source language'),
             'options' => ['query' => Language::getLanguages(false), 'id' => 'id_lang', 'name' => 'name'],
         ];
-        foreach (['active' => 'Active', 'price_tax_included' => 'Prices include tax', 'deactivate_missing' => 'Deactivate missing products'] as $field => $label) {
+        foreach (['active' => 'Active', 'deactivate_missing' => 'Deactivate missing products'] as $field => $label) {
             $inputs[] = [
                 'type' => 'switch', 'name' => $field, 'label' => $this->trans($label), 'is_bool' => true,
                 'values' => [
                     ['id' => $field . '_on', 'value' => 1, 'label' => $this->trans('Yes')],
                     ['id' => $field . '_off', 'value' => 0, 'label' => $this->trans('No')],
                 ],
-                'desc' => $field === 'price_tax_included'
-                    ? $this->trans('Tax conversion is not implemented yet: prices are currently stored unchanged.')
-                    : ($field === 'deactivate_missing' ? $this->trans('After a successful fetch, untouched products are deactivated and untouched combinations receive zero stock.') : ''),
+                'desc' => $field === 'deactivate_missing' ? $this->trans('After a successful fetch, untouched products are deactivated and untouched combinations receive zero stock.') : '',
             ];
         }
         $helper = new HelperForm();
@@ -562,7 +561,7 @@ class AdminPiSourceController extends ModuleAdminController
             }
             $data[$field] = trim($value);
         }
-        foreach (['active', 'price_tax_included', 'deactivate_missing'] as $field) {
+        foreach (['active', 'deactivate_missing'] as $field) {
             $data[$field] = (int) (Tools::getValue($field) === '1');
         }
         $root = Tools::getValue('root_category_id', '');

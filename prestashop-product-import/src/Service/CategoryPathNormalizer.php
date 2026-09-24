@@ -6,6 +6,7 @@ class CategoryPathNormalizer
 {
     /**
      * @return list<list<string>>
+     * A nonempty string is one path with one segment.
      * A nonempty integer-keyed child array identifies an outer list of paths.
      * Otherwise the input is one path (strings/title dictionaries plus junk).
      * In multi-path mode, outer scalars/dictionaries are junk, not extra paths.
@@ -13,6 +14,11 @@ class CategoryPathNormalizer
      */
     public function normalize($rawCategoryPaths): array
     {
+        if (is_string($rawCategoryPaths)) {
+            $name = trim($rawCategoryPaths);
+
+            return $name === '' ? [] : [[$name]];
+        }
         if (!is_array($rawCategoryPaths) || !$this->isList($rawCategoryPaths)) {
             return [];
         }

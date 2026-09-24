@@ -16,7 +16,7 @@ Exclude one brand: <code>fields['brand'] != 'Nike'</code>
     <div id="pi-products" class="tab-pane" role="tabpanel" aria-labelledby="pi-products-link">
 <div id="pi-fixed-mappings">
   <p class="help-block">Choose a source field, or choose Custom expression for formulas. Blank rows are not saved.</p>
-  <p class="help-block">category_paths expects a list of paths, for example [fields['breadcrumbs']]. images expects a list of URLs; main_image defaults to its first entry. Container fields are included in the selectors.</p>
+  <p class="help-block">category_paths accepts a single category name, such as fields['category'], or a breadcrumb chain or list of paths, such as [fields['breadcrumbs']]. Hierarchy matters only for auto-create; set category overrides on the Categories tab. images expects a list of URLs; main_image defaults to its first entry. Container fields are included in the selectors.</p>
   {foreach from=$pi_fixed_rows item=row}
   <div class="panel pi-fixed-row" data-target="{$row.target|escape:'html':'UTF-8'}">
     <label for="pi-source-{$row.target|escape:'html':'UTF-8'}">{$row.target|escape:'html':'UTF-8'}</label>

@@ -10,42 +10,58 @@ Exclude one brand: <code>fields['brand'] != 'Nike'</code>
   <ul class="nav nav-tabs" role="tablist">
     <li class="active" role="presentation"><a id="pi-general-link" href="#pi-general" role="tab" aria-controls="pi-general" aria-selected="true" data-toggle="tab">General</a></li>
     <li role="presentation"><a id="pi-products-link" href="#pi-products" role="tab" aria-controls="pi-products" aria-selected="false" data-toggle="tab">Product fields</a></li>
-    <li role="presentation"><a id="pi-combinations-link" href="#pi-combinations" role="tab" aria-controls="pi-combinations" aria-selected="false" data-toggle="tab">Combinations</a></li>
   </ul>
   <div class="tab-content">
     <div id="pi-general" class="tab-pane active" role="tabpanel" aria-labelledby="pi-general-link"></div>
     <div id="pi-products" class="tab-pane" role="tabpanel" aria-labelledby="pi-products-link">
 <div id="pi-fixed-mappings">
-  <p class="help-block">Choose a source field to replace an expression, or select a field to insert at the cursor. Expressions are always editable; blank rows are not saved.</p>
+  <p class="help-block">Choose a source field, or choose Custom expression for formulas. Blank rows are not saved.</p>
   <p class="help-block">category_paths expects a list of paths, for example [fields['breadcrumbs']]. images expects a list of URLs; main_image defaults to its first entry. Container fields are included in the selectors.</p>
   {foreach from=$pi_fixed_rows item=row}
   <div class="panel pi-fixed-row" data-target="{$row.target|escape:'html':'UTF-8'}">
-    <label for="pi-expression-{$row.target|escape:'html':'UTF-8'}">{$row.target|escape:'html':'UTF-8'}</label>
+    <label for="pi-source-{$row.target|escape:'html':'UTF-8'}">{$row.target|escape:'html':'UTF-8'}</label>
     <span class="badge">{$row.badge|escape:'html':'UTF-8'}</span>
     <input class="pi-fixed-target" type="hidden" name="field_mapping_target[]" value="{if $row.expression != ''}{$row.target|escape:'html':'UTF-8'}{/if}">
-    <label>Source field (replace expression)
-      <select class="pi-source-field" disabled><option value="">Run Test source above to populate</option></select>
-    </label>
-    <label>Insert field at cursor
-      <select class="pi-insert-field" disabled><option value="">Run Test source above to populate</option></select>
-    </label>
-    <button type="button" class="btn btn-default pi-insert-button" disabled>+ Insert</button>
-    <textarea id="pi-expression-{$row.target|escape:'html':'UTF-8'}" name="field_mapping_expression[]" rows="3">{$row.expression|escape:'html':'UTF-8'}</textarea>
+    <select id="pi-source-{$row.target|escape:'html':'UTF-8'}" class="pi-source-field" aria-label="Source field for {$row.target|escape:'html':'UTF-8'}"></select>
+    <div class="pi-custom-controls">
+      <textarea name="field_mapping_expression[]" rows="3" aria-label="Custom expression for {$row.target|escape:'html':'UTF-8'}">{$row.expression|escape:'html':'UTF-8'}</textarea>
+      <select class="pi-insert-field" aria-label="Field to insert"><option value="">Run Test source above to populate</option></select>
+      <button type="button" class="btn btn-default pi-insert-button" disabled>+ Insert field at cursor</button>
+    </div>
   </div>
   {/foreach}
 </div>
 <h3>Custom fields</h3>
 <p class="help-block">Use custom rows for targets outside the fixed list above.</p>
 {include file='./mapping_rows.tpl' rows=$pi_mapping_rows prefix='field_mapping' heading='Custom target field' add_label='+ Add custom field'}
+<section id="pi-variants">
+  <h3>Variants (optional)</h3>
+  <p class="help-block">A variants list contains one entry per combination, such as <code>variants</code>. Attributes describe each entry, for example attribute Size mapped to <code>variant['size']</code>.</p>
+  <label for="pi-variants-list">Variants list</label>
+  <select id="pi-variants-list"></select>
+  <input id="pi-variants-expression" type="text" name="variants_expression" value="{$pi_variants_expression|escape:'html':'UTF-8'}" aria-label="Custom variants expression">
+  <div id="pi-variant-mappings">
+    <p class="help-block">At least one attribute and a reference field are required. Variant price is absolute; active=false sets zero stock.</p>
+    <h4>Variant fields</h4>
+    {foreach from=['reference', 'ean13', 'price', 'quantity', 'active', 'image'] item=target}
+    <div class="panel pi-variant-row" data-target="{$target|escape:'html':'UTF-8'}">
+      <label>{$target|escape:'html':'UTF-8'}</label>{if $target == 'reference'} <span class="badge">Required for variants</span>{/if}
+      <input class="pi-variant-target" type="hidden" name="variant_field_target[]" value="{$target|escape:'html':'UTF-8'}">
+      <select class="pi-mapping-select" aria-label="Source for variant {$target|escape:'html':'UTF-8'}"></select>
+      <textarea name="variant_field_expression[]" rows="3" aria-label="Custom variant {$target|escape:'html':'UTF-8'} expression">{foreach from=$pi_variant_field_rows item=row}{if $row.target == $target}{$row.expression|escape:'html':'UTF-8'}{/if}{/foreach}</textarea>
     </div>
-    <div id="pi-combinations" class="tab-pane" role="tabpanel" aria-labelledby="pi-combinations-link">
-<h3>Optional combinations</h3>
-<label for="pi-variants-expression">Variants expression</label>
-<input id="pi-variants-expression" type="text" name="variants_expression" value="{$pi_variants_expression|escape:'html':'UTF-8'}">
-<p class="help-block">Leave empty for no combinations. Expression must return a list, for example fields['variants']. Rows below can use both fields and variant. At least one attribute and a reference mapping are required.</p>
-{include file='./mapping_rows.tpl' rows=$pi_attribute_rows prefix='variant_attribute' heading='Attribute name'}
-<p class="help-block">Variant fields: reference, ean13, price (absolute), quantity, active, image. active=false sets zero stock; it does not hide the combination.</p>
-{include file='./mapping_rows.tpl' rows=$pi_variant_field_rows prefix='variant_field' heading='Variant target field'}
+    {/foreach}
+    <h4>Attributes</h4>
+    <div id="pi-attribute-rows">
+    {foreach from=$pi_attribute_rows item=row}
+      <div class="panel pi-attribute-row"><input type="text" name="variant_attribute_target[]" value="{$row.target|escape:'html':'UTF-8'}" placeholder="Attribute name, e.g. Size" aria-label="Attribute name"><select class="pi-mapping-select" aria-label="Attribute source"></select><textarea name="variant_attribute_expression[]" rows="3" aria-label="Custom attribute expression">{$row.expression|escape:'html':'UTF-8'}</textarea><button type="button" class="btn btn-default pi-remove-attribute">Remove</button></div>
+    {foreachelse}
+      <div class="panel pi-attribute-row"><input type="text" name="variant_attribute_target[]" placeholder="Attribute name, e.g. Size" aria-label="Attribute name"><select class="pi-mapping-select" aria-label="Attribute source"></select><textarea name="variant_attribute_expression[]" rows="3" aria-label="Custom attribute expression"></textarea><button type="button" class="btn btn-default pi-remove-attribute">Remove</button></div>
+    {/foreach}
+    </div>
+    <button type="button" id="pi-add-attribute" class="btn btn-default">+ Add attribute</button>
+  </div>
+</section>
     </div>
   </div>
 </div>

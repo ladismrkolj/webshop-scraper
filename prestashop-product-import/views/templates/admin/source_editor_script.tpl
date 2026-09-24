@@ -8,6 +8,12 @@
     panel.dataset.editorReady = '1';
     var form = panel.closest('form');
     var fixed = Array.from(form.querySelectorAll('.pi-fixed-row'));
+    var variantRows = Array.from(form.querySelectorAll('.pi-variant-row'));
+    var attributes = document.getElementById('pi-attribute-rows');
+    var variantsList = document.getElementById('pi-variants-list');
+    var variantsExpression = document.getElementById('pi-variants-expression');
+    var variantMappings = document.getElementById('pi-variant-mappings');
+    var variantChoices = [], listChoices = [];
     var identifier = form.querySelector('[name="identifier_field"]');
     var identifierPicker = document.getElementById('pi-identifier-picker');
     var choices = [];
@@ -29,13 +35,14 @@
     function quote(value) {
       return "'" + String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
     }
-    function expression(parts) {
-      if (parts.length === 1) return 'fields[' + quote(parts[0]) + ']';
+    function expression(parts, root) {
+      root = root || 'fields';
+      if (parts.length === 1) return root + '[' + quote(parts[0]) + ']';
       // path() splits on dots and has no escape syntax for a literal dot in a key.
       if (parts.every(function (part) { return String(part).indexOf('.') === -1; })) {
-        return 'path(fields, ' + quote(parts.join('.')) + ')';
+        return 'path(' + root + ', ' + quote(parts.join('.')) + ')';
       }
-      return 'fields' + parts.map(function (part) { return '[' + quote(part) + ']'; }).join('');
+      return root + parts.map(function (part) { return '[' + quote(part) + ']'; }).join('');
     }
     function label(parts) {
       return parts.map(function (part, index) {
@@ -43,31 +50,104 @@
         return /^[A-Za-z_][A-Za-z0-9_]*$/.test(part) ? (index ? '.' : '') + part : '[' + JSON.stringify(part) + ']';
       }).join('');
     }
-    function fill(select, entries) {
-      select.replaceChildren(new Option(entries.length ? 'Choose a source field' : 'Run Test source above to populate', ''));
+    function fill(select, entries, empty, custom) {
+      select.replaceChildren(new Option(empty, ''));
       entries.forEach(function (entry) { select.add(new Option(entry.label, entry.value)); });
-      select.disabled = !entries.length;
+      if (custom) select.add(new Option('Custom expression…', '__custom__'));
+    }
+    function setSelection(row, entries) {
+      var select = row.querySelector('.pi-mapping-select, .pi-source-field');
+      var input = row.querySelector('textarea');
+      var wasCustom = row.dataset.custom === '1';
+      var match = entries.find(function (entry) { return entry.value === input.value; });
+      select.value = wasCustom ? '__custom__' : (input.value ? (match ? match.value : '__custom__') : '');
+      if (input.value && !select.value) select.value = '__custom__';
+      var controls = row.querySelector('.pi-custom-controls');
+      (controls || input).style.display = select.value === '__custom__' ? '' : 'none';
+      if (!controls) input.style.display = select.value === '__custom__' ? '' : 'none';
+      var target = row.querySelector('.pi-fixed-target, .pi-variant-target');
+      if (target) target.value = input.value.trim() ? row.dataset.target : '';
+    }
+    function configureRow(row, entries) {
+      var select = row.querySelector('.pi-mapping-select, .pi-source-field');
+      var input = row.querySelector('textarea');
+      row.piEntries = entries;
+      fill(select, entries, '— not mapped —', true);
+      setSelection(row, entries);
+      if (row.dataset.ready) return;
+      row.dataset.ready = '1';
+      select.addEventListener('change', function () {
+        row.dataset.touched = '1';
+        row.dataset.custom = select.value === '__custom__' ? '1' : '0';
+        if (select.value !== '__custom__') input.value = select.value;
+        if (select.value === '__custom__') {
+          var controls = row.querySelector('.pi-custom-controls');
+          (controls || input).style.display = '';
+          input.focus();
+        } else setSelection(row, row.piEntries);
+        input.dispatchEvent(new Event('input', {bubbles: true}));
+      });
+      input.addEventListener('input', function () {
+        row.dataset.touched = '1';
+        var target = row.querySelector('.pi-fixed-target, .pi-variant-target');
+        if (target) target.value = input.value.trim() ? row.dataset.target : '';
+      });
+    }
+    function updateVariantMappings() {
+      variantMappings.style.display = variantsExpression.value.trim() ? '' : 'none';
+    }
+    function updateLists() {
+      var currentList = variantsList.value;
+      fill(variantsList, listChoices, '— no variants —', true);
+      if (variantsList.dataset.touched) variantsList.value = currentList;
+      if (!variantsList.dataset.touched) {
+        var match = listChoices.find(function (entry) { return entry.value === variantsExpression.value; });
+        variantsList.value = variantsExpression.value ? (match ? match.value : '__custom__') : '';
+      }
+      variantsExpression.style.display = variantsList.value === '__custom__' ? '' : 'none';
+      updateVariantMappings();
     }
     function populate(fields) {
       window.piSourceFields = fields;
       var seen = new Map();
+      var lists = new Map();
       fields.forEach(function (field) {
         var parts = segments(field.key);
-        // Include parent containers so images/breadcrumbs can be mapped as entire lists.
         for (var length = 1; length <= parts.length; length++) {
           var prefix = parts.slice(0, length);
-          seen.set(JSON.stringify(prefix), {parts: prefix, label: label(prefix), value: expression(prefix)});
+          seen.set(JSON.stringify(prefix), {parts: prefix, label: label(prefix), value: expression(prefix, 'fields')});
         }
+        var index = parts.findIndex(function (part) { return part === 0; });
+        if (index > 0 && index < parts.length - 1) lists.set(JSON.stringify(parts.slice(0, index)), parts.slice(0, index));
       });
       choices = Array.from(seen.values());
+      listChoices = Array.from(lists.values()).map(function (parts) { return {parts: parts, label: label(parts), value: expression(parts, 'fields')}; });
+      var selected = listChoices.find(function (entry) { return entry.value === variantsExpression.value; });
+      var listParts = selected && selected.parts;
+      var itemSeen = new Map();
+      if (listParts) fields.forEach(function (field) {
+        var parts = segments(field.key);
+        if (JSON.stringify(parts.slice(0, listParts.length)) !== JSON.stringify(listParts) || parts[listParts.length] !== 0) return;
+        var item = parts.slice(listParts.length + 1);
+        for (var length = 1; length <= item.length; length++) {
+          var prefix = item.slice(0, length);
+          itemSeen.set(JSON.stringify(prefix), {label: label(prefix), value: expression(prefix, 'variant')});
+        }
+      });
+      variantChoices = Array.from(itemSeen.values());
+      var grouped = variantChoices.concat(choices.map(function (entry) { return {label: 'Product: ' + entry.label, value: entry.value}; }));
       fixed.forEach(function (row) {
-        fill(row.querySelector('.pi-source-field'), choices);
-        fill(row.querySelector('.pi-insert-field'), choices);
+        configureRow(row, choices);
+        fill(row.querySelector('.pi-insert-field'), choices, 'Insert field at cursor', false);
         row.querySelector('.pi-insert-button').disabled = true;
       });
+      variantRows.forEach(function (row) { configureRow(row, grouped); });
+      Array.from(attributes.children).forEach(function (row) { configureRow(row, grouped); });
+      updateLists();
       fill(identifierPicker, choices.filter(function (choice) { return choice.parts.length === 1; }).map(function (choice) {
         return {label: choice.label, value: String(choice.parts[0])};
-      }));
+      }), 'Choose a source field', false);
+      identifierPicker.disabled = !choices.length;
     }
     identifierPicker.addEventListener('change', function () {
       if (this.value !== '') {
@@ -85,14 +165,6 @@
       function sync() { target.value = textarea.value.trim() ? row.dataset.target : ''; }
       ['select', 'keyup', 'click', 'input', 'blur'].forEach(function (event) { textarea.addEventListener(event, remember); });
       textarea.addEventListener('input', sync);
-      row.querySelector('.pi-source-field').addEventListener('change', function () {
-        if (!this.value) return;
-        textarea.value = this.value;
-        textarea.focus();
-        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-        remember();
-        textarea.dispatchEvent(new Event('input', {bubbles: true}));
-      });
       insert.addEventListener('change', function () { button.disabled = !this.value; });
       button.addEventListener('click', function () {
         if (!insert.value) return;
@@ -102,9 +174,42 @@
         remember();
         textarea.dispatchEvent(new Event('input', {bubbles: true}));
       });
-      sync();
+      configureRow(row, choices);
       form.addEventListener('submit', sync);
     });
+
+    variantsList.addEventListener('change', function () {
+      variantsList.dataset.touched = '1';
+      if (variantsList.value !== '__custom__') variantsExpression.value = variantsList.value;
+      variantsExpression.style.display = variantsList.value === '__custom__' ? '' : 'none';
+      if (variantsList.value === '__custom__') variantsExpression.focus();
+      updateVariantMappings();
+      populate(window.piSourceFields);
+    });
+    variantsExpression.addEventListener('input', updateVariantMappings);
+    document.getElementById('pi-add-attribute').addEventListener('click', function () {
+      var row = attributes.firstElementChild.cloneNode(true);
+      row.querySelector('input').value = '';
+      row.querySelector('textarea').value = '';
+      delete row.dataset.ready;
+      delete row.dataset.touched;
+      delete row.dataset.custom;
+      attributes.appendChild(row);
+      populate(window.piSourceFields);
+    });
+    attributes.addEventListener('click', function (event) {
+      if (event.target.classList.contains('pi-remove-attribute')) {
+        if (attributes.children.length > 1) event.target.closest('.pi-attribute-row').remove();
+        else {
+          attributes.firstElementChild.querySelector('input').value = '';
+          attributes.firstElementChild.querySelector('textarea').value = '';
+          delete attributes.firstElementChild.dataset.touched;
+          delete attributes.firstElementChild.dataset.custom;
+          configureRow(attributes.firstElementChild, variantChoices.concat(choices));
+        }
+      }
+    });
+    populate([]);
 
     function section(container, title, values) {
       var heading = document.createElement('h4');
@@ -176,8 +281,8 @@
             status.textContent = 'OK - ' + [
               count(data.item_count, 'item', 'items'),
               inspection.error || count((inspection.fields || []).length, 'field', 'fields'),
-              result(categories, 'unique_paths', 'category path', 'category paths'),
-              result(brands, 'unique_brands', 'brand', 'brands')
+              (categories.skipped || categories.error ? 'categories: ' : '') + result(categories, 'unique_paths', 'category path', 'category paths'),
+              (brands.skipped || brands.error ? 'brands: ' : '') + result(brands, 'unique_brands', 'brand', 'brands')
             ].join(', ');
             output.appendChild(status);
             var details = document.createElement('details');

@@ -24,7 +24,7 @@ class AdminPiSourceController extends ModuleAdminController
 
     public function postProcess()
     {
-        $actions = ['testSource' => 'ajaxProcessTestSource', 'preview' => 'ajaxProcessPreview', 'inspect' => 'ajaxProcessInspect', 'discoverCategories' => 'ajaxProcessDiscoverCategories'];
+        $actions = ['testSource' => 'ajaxProcessTestSource', 'preview' => 'ajaxProcessPreview', 'inspect' => 'ajaxProcessInspect', 'discoverCategories' => 'ajaxProcessDiscoverCategories', 'mappings' => 'ajaxProcessMappings', 'saveMapping' => 'ajaxProcessSaveMapping', 'saveDefault' => 'ajaxProcessSaveDefault'];
         $action = Tools::getValue('action');
         if ($this->ajax && is_string($action) && isset($actions[$action])) {
             $this->{$actions[$action]}();
@@ -273,6 +273,95 @@ class AdminPiSourceController extends ModuleAdminController
             'errors_omitted' => max(0, $failed - count($errors)), 'mapping_url' => $this->context->link->getAdminLink($brands ? 'AdminPiManufacturerMap' : 'AdminPiCategoryMap') . '&id_source=' . $idSource];
     }
 
+    private function mappingContext(string $permission): array
+    {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+            throw new InvalidArgumentException('POST required.');
+        }
+        $source = $this->requireSource($permission);
+        $type = Tools::getValue('type');
+        if (!in_array($type, ['category', 'brand'], true)) {
+            throw new InvalidArgumentException('Invalid mapping type.');
+        }
+        $category = $type === 'category';
+        $options = new \ProductImport\Service\CatalogOptions();
+        $options = $category ? $options->categories((int) $this->context->shop->id, (int) $this->context->language->id) : $options->manufacturers();
+        $idColumn = $category ? 'id_category' : 'id_manufacturer';
+        $names = array_column($options, 'label', $idColumn);
+        return [$source, $category, $options, $names, $idColumn];
+    }
+
+    private function mappingStatus(?int $id, $default, array $names, bool $category): string
+    {
+        if ($id === null) {
+            return $default === null ? 'auto-create' : 'source default #' . $default;
+        }
+        return 'existing ' . ($category ? 'category' : 'manufacturer') . ' #' . $id . ' (' . ($names[$id] ?? 'missing or unavailable') . ')';
+    }
+
+    public function ajaxProcessMappings()
+    {
+        try {
+            [$source, $category, $options, $names, $idColumn] = $this->mappingContext('view');
+            $repository = $category ? new \ProductImport\Repository\CategoryMappingRepository() : new \ProductImport\Repository\ManufacturerMappingRepository();
+            $default = $source['default_' . $idColumn];
+            $rows = [];
+            foreach ($repository->findAllForSource((int) $source['id_source']) as $row) {
+                $id = $row[$idColumn] === null ? null : (int) $row[$idColumn];
+                $rows[] = ['key' => $category ? $row['source_path_hash'] : $row['source_name'],
+                    'label' => $category ? implode(' > ', json_decode($row['source_path'], true, 512, JSON_THROW_ON_ERROR)) : $row['source_name'],
+                    'id' => $id, 'status' => $this->mappingStatus($id, $default, $names, $category)];
+            }
+            $this->sendJson(['default' => $default === null ? null : (int) $default, 'rows' => $rows,
+                'options' => array_map(static function ($option) use ($idColumn) {
+                    return ['id' => $option[$idColumn], 'label' => $option['label']];
+                }, $options)]);
+        } catch (Throwable $error) {
+            $this->sendJson(['error' => $error->getMessage()]);
+        }
+    }
+
+    private function saveMappingValue(bool $default): void
+    {
+        try {
+            [$source, $category, $options, $names, $idColumn] = $this->mappingContext('edit');
+            $value = Tools::getValue('value', '');
+            if (!is_string($value) || ($value !== '' && (!ctype_digit($value) || (int) $value <= 0))) {
+                throw new InvalidArgumentException($category ? 'Invalid category.' : 'Invalid manufacturer.');
+            }
+            $id = $value === '' ? null : (int) $value;
+            if ($id !== null && !in_array($id, array_column($options, $idColumn), true)) {
+                throw new InvalidArgumentException($category ? 'Category is not available in this shop.' : 'Manufacturer does not exist.');
+            }
+            $idSource = (int) $source['id_source'];
+            if ($default) {
+                if (!$this->sources->update($idSource, ['default_' . $idColumn => $id])) {
+                    throw new RuntimeException('Unable to save default.');
+                }
+            } else {
+                $key = Tools::getValue('key');
+                $repository = $category ? new \ProductImport\Repository\CategoryMappingRepository() : new \ProductImport\Repository\ManufacturerMappingRepository();
+                if (!is_string($key) || !$repository->findOverride($idSource, $key)) {
+                    throw new InvalidArgumentException($category ? 'Unknown source path.' : 'Unknown source brand.');
+                }
+                $repository->setOverride($idSource, $key, $id);
+            }
+            $this->sendJson(['ok' => true, 'status' => $this->mappingStatus($id, $default ? null : $source['default_' . $idColumn], $names, $category)]);
+        } catch (Throwable $error) {
+            $this->sendJson(['error' => $error->getMessage()]);
+        }
+    }
+
+    public function ajaxProcessSaveMapping()
+    {
+        $this->saveMappingValue(false);
+    }
+
+    public function ajaxProcessSaveDefault()
+    {
+        $this->saveMappingValue(true);
+    }
+
     private function requireSource(string $permission): array
     {
         if (!$this->access($permission) || !$this->checkToken()) {
@@ -332,11 +421,6 @@ class AdminPiSourceController extends ModuleAdminController
         $cronUrl = $this->context->link->getModuleLink('productimport', 'cron', ['token' => Configuration::get('PIIMPORT_CRON_TOKEN')], true);
         $banner = '<div class="alert alert-info">Daily cron URL: <code>' . Tools::safeOutput($cronUrl) . '</code></div>';
         $sources = $this->sources->findAll();
-        foreach ($sources as $source) {
-            $url = $this->context->link->getAdminLink('AdminPiCategoryMap') . '&id_source=' . (int) $source['id_source'];
-            $brandUrl = $this->context->link->getAdminLink('AdminPiManufacturerMap') . '&id_source=' . (int) $source['id_source'];
-            $banner .= '<p>' . Tools::safeOutput($source['name']) . ': <a href="' . Tools::safeOutput($url) . '">Category mappings →</a> | <a href="' . Tools::safeOutput($brandUrl) . '">Brand mappings →</a></p>';
-        }
         return $banner . $helper->generateList($sources, [
             'name' => ['title' => $this->trans('Name')],
             'technical_key' => ['title' => $this->trans('Technical key')],
@@ -399,7 +483,7 @@ class AdminPiSourceController extends ModuleAdminController
             }, $variant['attributes'] ?? []),
             'pi_variant_field_rows' => $variant['field_rows'] ?? $variantFields,
         ]);
-        $this->context->smarty->assign(['pi_manufacturer_url' => $this->context->link->getAdminLink('AdminPiManufacturerMap') . '&id_source=' . $id, 'pi_category_url' => $this->context->link->getAdminLink('AdminPiCategoryMap') . '&id_source=' . $id, 'pi_can_discover' => $this->access('edit'), 'pi_preview_id' => $id, 'pi_preview_url' => $this->context->link->getAdminLink('AdminPiSource')]);
+        $this->context->smarty->assign(['pi_can_discover' => $this->access('edit'), 'pi_preview_id' => $id, 'pi_preview_url' => $this->context->link->getAdminLink('AdminPiSource')]);
         $testHtml = $this->context->smarty->fetch(dirname(__DIR__, 3) . '/views/templates/admin/preview.tpl');
         $mappingHtml = $this->context->smarty->fetch(dirname(__DIR__, 3) . '/views/templates/admin/source_form.tpl');
         $helpTemplate = $this->context->smarty->createTemplate(dirname(__DIR__, 3) . '/views/templates/admin/source_form.tpl');

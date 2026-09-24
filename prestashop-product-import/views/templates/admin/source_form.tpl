@@ -10,6 +10,8 @@ Exclude one brand: <code>fields['brand'] != 'Nike'</code>
   <ul class="nav nav-tabs" role="tablist">
     <li class="active" role="presentation"><a id="pi-general-link" href="#pi-general" role="tab" aria-controls="pi-general" aria-selected="true" data-toggle="tab">General</a></li>
     <li role="presentation"><a id="pi-products-link" href="#pi-products" role="tab" aria-controls="pi-products" aria-selected="false" data-toggle="tab">Product fields</a></li>
+    <li role="presentation"><a id="pi-categories-link" href="#pi-categories" role="tab" aria-controls="pi-categories" aria-selected="false">Categories</a></li>
+    <li role="presentation"><a id="pi-brands-link" href="#pi-brands" role="tab" aria-controls="pi-brands" aria-selected="false">Brands</a></li>
   </ul>
   <div class="tab-content">
     <div id="pi-general" class="tab-pane active" role="tabpanel" aria-labelledby="pi-general-link"></div>
@@ -63,9 +65,12 @@ Exclude one brand: <code>fields['brand'] != 'Nike'</code>
   </div>
 </section>
     </div>
+    <div id="pi-categories" class="tab-pane" role="tabpanel" aria-labelledby="pi-categories-link"></div>
+    <div id="pi-brands" class="tab-pane" role="tabpanel" aria-labelledby="pi-brands-link"></div>
   </div>
 </div>
 {include file='./source_tabs_script.tpl'}
+{include file='./source_mappings_script.tpl'}
 {literal}
 <script>
 (function () {

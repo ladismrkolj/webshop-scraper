@@ -39,6 +39,7 @@
         link.setAttribute('aria-selected', String(active));
         link.tabIndex = active ? 0 : -1;
       });
+      document.dispatchEvent(new CustomEvent('pi-source-tab', {detail: id}));
       try { sessionStorage.setItem(storageKey, id); } catch (error) { /* Storage may be disabled. */ }
     }
     links.forEach(function (link, index) {

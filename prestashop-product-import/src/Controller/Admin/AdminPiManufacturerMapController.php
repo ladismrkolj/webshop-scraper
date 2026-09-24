@@ -84,12 +84,6 @@ class AdminPiManufacturerMapController extends ModuleAdminController
 
     private function manufacturerOptions(): array
     {
-        $rows = Db::getInstance()->executeS('SELECT `id_manufacturer`, `name` FROM `' . _DB_PREFIX_ . 'manufacturer` ORDER BY `name`');
-        if ($rows === false) {
-            throw new RuntimeException('Unable to list manufacturers.');
-        }
-        return array_map(static function (array $row): array {
-            return ['id_manufacturer' => (int) $row['id_manufacturer'], 'label' => $row['name']];
-        }, $rows);
+        return (new \ProductImport\Service\CatalogOptions())->manufacturers();
     }
 }

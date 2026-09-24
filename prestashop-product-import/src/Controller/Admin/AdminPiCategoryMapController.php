@@ -85,16 +85,6 @@ class AdminPiCategoryMapController extends ModuleAdminController
 
     private function categoryOptions(): array
     {
-        // One query, ordered by the nested-set position. No per-category ObjectModel loads.
-        $rows = Db::getInstance()->executeS('SELECT c.`id_category`, c.`level_depth`, cl.`name` FROM `' . _DB_PREFIX_ . 'category` c'
-            . ' INNER JOIN `' . _DB_PREFIX_ . 'category_shop` cs ON cs.`id_category` = c.`id_category` AND cs.`id_shop` = ' . (int) $this->context->shop->id
-            . ' LEFT JOIN `' . _DB_PREFIX_ . 'category_lang` cl ON cl.`id_category` = c.`id_category` AND cl.`id_shop` = cs.`id_shop` AND cl.`id_lang` = ' . (int) $this->context->language->id
-            . ' ORDER BY c.`nleft`, c.`id_category`');
-        if ($rows === false) {
-            throw new RuntimeException('Unable to list categories.');
-        }
-        return array_map(static function (array $row): array {
-            return ['id_category' => (int) $row['id_category'], 'label' => str_repeat('— ', min(30, (int) $row['level_depth'])) . ($row['name'] ?? '(unnamed)') . ' #' . (int) $row['id_category']];
-        }, $rows);
+        return (new \ProductImport\Service\CatalogOptions())->categories((int) $this->context->shop->id, (int) $this->context->language->id);
     }
 }

@@ -232,14 +232,8 @@
       Object.keys(data.errors).forEach(function (key) { if (!rows[key]) rows[key] = {error: data.errors[key]}; });
       section(container, title, rows);
     }
-    function discovery(container, title, data, linkTitle) {
+    function discovery(container, title, data) {
       section(container, title, data);
-      if (data.mapping_url) {
-        var link = document.createElement('a');
-        link.href = data.mapping_url;
-        link.textContent = linkTitle;
-        container.appendChild(link);
-      }
     }
     var test = panel.querySelector('.pi-test-source');
     var configuration = form.querySelector('.pi-preview-button');
@@ -299,8 +293,8 @@
               section(details, 'Full sample JSON', {json: inspection.json});
               if (inspection.truncated) section(details, 'Display limits', {notice: 'Field list capped at depth 4, 3 entries per array, 100 rows. Expressions may also use other keys.'});
             }
-            discovery(details, 'Category discovery', categories, 'Open category mappings');
-            discovery(details, 'Brand discovery', brands, 'Open brand mappings');
+            discovery(details, 'Category discovery', categories);
+            discovery(details, 'Brand discovery', brands);
             output.appendChild(details);
             return;
           }
@@ -317,7 +311,7 @@
           });
         })
         .catch(function (error) { output.textContent = 'Test failed: ' + error.message; })
-        .then(function () { clicked.disabled = false; });
+        .then(function () { clicked.disabled = false; if (sourceTest) document.dispatchEvent(new Event('pi-test-source-complete')); });
     }
     test.addEventListener('click', function () { request('testSource', test); });
     configuration.addEventListener('click', function () { request('preview', configuration); });

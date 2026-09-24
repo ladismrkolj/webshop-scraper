@@ -57,10 +57,11 @@ class AdminPiSourceController extends ModuleAdminController
                         throw new RuntimeException('Unable to update source.');
                     }
                 } else {
-                    $this->sources->create($data);
+                    $id = $this->sources->create($data);
                 }
             }
-            Tools::redirectAdmin($this->context->link->getAdminLink('AdminPiSource') . '&conf=' . ($deleting ? 1 : 4));
+            $url = $this->context->link->getAdminLink('AdminPiSource');
+            Tools::redirectAdmin($deleting ? $url . '&conf=1' : $url . '&updatepi_source&id_source=' . $id . '&conf=' . ($saving && $permission === 'add' ? 3 : 4));
         } catch (Throwable $error) {
             $this->errors[] = Tools::safeOutput($error->getMessage());
             if ($saving) {
@@ -112,31 +113,15 @@ class AdminPiSourceController extends ModuleAdminController
 
     private function sampleItem(array $source, ?array $fetchedItems = null): array
     {
-        $hasIndex = Tools::getIsset('item_index');
-        $hasRaw = Tools::getIsset('raw_item');
-        if ($hasIndex === $hasRaw) {
-            throw new InvalidArgumentException('Provide exactly one of item_index or raw_item.');
+        $index = Tools::getValue('item_index');
+        if (!is_string($index) || !ctype_digit($index)) {
+            throw new InvalidArgumentException('item_index must be a non-negative integer.');
         }
-        if ($hasRaw) {
-            $raw = Tools::getValue('raw_item');
-            if (!is_string($raw) || substr(ltrim($raw), 0, 1) !== '{') {
-                throw new InvalidArgumentException('raw_item must be a JSON object.');
-            }
-            $item = json_decode($raw, true);
-            if (json_last_error() !== JSON_ERROR_NONE || !is_array($item)) {
-                throw new InvalidArgumentException('Invalid JSON object: ' . json_last_error_msg());
-            }
-        } else {
-            $index = Tools::getValue('item_index');
-            if (!is_string($index) || !ctype_digit($index)) {
-                throw new InvalidArgumentException('item_index must be a non-negative integer.');
-            }
-            $items = $fetchedItems ?? (new \ProductImport\Service\JsonFetcher())->fetch($source['json_url'], $source['json_file_path']);
-            if (!array_key_exists((int) $index, $items) || !is_array($items[(int) $index])) {
-                throw new InvalidArgumentException('No product object at that index.');
-            }
-            $item = $items[(int) $index];
+        $items = $fetchedItems ?? (new \ProductImport\Service\JsonFetcher())->fetch($source['json_url'], $source['json_file_path']);
+        if (!array_key_exists((int) $index, $items) || !is_array($items[(int) $index])) {
+            throw new InvalidArgumentException('No product object at that index.');
         }
+        $item = $items[(int) $index];
         return $item;
     }
 

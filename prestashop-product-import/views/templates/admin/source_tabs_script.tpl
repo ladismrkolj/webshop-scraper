@@ -61,8 +61,15 @@
       var pane = event.target.closest('.tab-pane');
       if (pane) activate(pane.id);
     }, true);
+    form.addEventListener('submit', function () {
+      var active = panes.find(function (pane) { return pane.classList.contains('active'); });
+      try { if (active) sessionStorage.setItem('productimport-tab-pending', active.id); } catch (error) { /* Storage may be disabled. */ }
+    });
     var remembered = 'pi-general';
-    try { remembered = sessionStorage.getItem(storageKey) || remembered; } catch (error) { /* General is the fallback. */ }
+    try {
+      remembered = sessionStorage.getItem('productimport-tab-pending') || sessionStorage.getItem(storageKey) || remembered;
+      sessionStorage.removeItem('productimport-tab-pending');
+    } catch (error) { /* General is the fallback. */ }
     activate(remembered);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initTabs);

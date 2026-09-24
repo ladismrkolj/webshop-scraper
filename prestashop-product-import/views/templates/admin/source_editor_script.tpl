@@ -152,30 +152,51 @@
         body.set('json_url', form.querySelector('[name="json_url"]').value);
         body.set('json_file_path', form.querySelector('[name="json_file_path"]').value);
       }
-      if (panel.querySelector('.pi-mode').value === 'raw') body.set('raw_item', panel.querySelector('.pi-raw').value);
-      else body.set('item_index', panel.querySelector('.pi-index').value);
+      body.set('item_index', '0');
       fetch(panel.dataset.url, {method: 'POST', credentials: 'same-origin', body: body})
         .then(function (response) { return response.json(); })
         .then(function (data) {
           output.textContent = '';
-          if (data.error) { section(output, 'Error', {error: data.error}); return; }
+          if (data.error) {
+            if (sourceTest) output.textContent = data.error;
+            else section(output, 'Error', {error: data.error});
+            return;
+          }
           if (sourceTest) {
-            section(output, 'Source status', {connectivity: data.connectivity, item_count: data.item_count});
-            if (data.inspection.error) section(output, 'Inspection error', data.inspection);
+            var inspection = data.inspection || {};
+            var categories = data.categories || {};
+            var brands = data.brands || {};
+            var status = document.createElement('p');
+            var count = function (value, singular, plural) { return value + ' ' + (value === 1 ? singular : plural); };
+            var result = function (sectionData, key, singular, plural) {
+              if (sectionData.error) return sectionData.error;
+              if (sectionData.skipped) return sectionData.skipped;
+              return count(sectionData[key], singular, plural);
+            };
+            status.textContent = 'OK - ' + [
+              count(data.item_count, 'item', 'items'),
+              inspection.error || count((inspection.fields || []).length, 'field', 'fields'),
+              result(categories, 'unique_paths', 'category path', 'category paths'),
+              result(brands, 'unique_brands', 'brand', 'brands')
+            ].join(', ');
+            output.appendChild(status);
+            var details = document.createElement('details');
+            var summary = document.createElement('summary');
+            summary.textContent = 'Details';
+            details.appendChild(summary);
+            section(details, 'Source status', {connectivity: data.connectivity, item_count: data.item_count});
+            if (inspection.error) section(details, 'Inspection error', inspection);
             else {
-              populate(data.inspection.fields);
+              populate(inspection.fields);
               var fields = Object.create(null);
-              data.inspection.fields.forEach(function (field) { fields[field.key] = field.value; });
-              section(output, 'Available fields', fields);
-              var details = document.createElement('details'), summary = document.createElement('summary'), pre = document.createElement('pre');
-              summary.textContent = 'Full sample JSON';
-              pre.textContent = data.inspection.json;
-              details.append(summary, pre);
-              output.appendChild(details);
-              if (data.inspection.truncated) section(output, 'Display limits', {notice: 'Field list capped at depth 4, 3 entries per array, 100 rows. Expressions may also use other keys.'});
+              inspection.fields.forEach(function (field) { fields[field.key] = field.value; });
+              section(details, 'Available fields', fields);
+              section(details, 'Full sample JSON', {json: inspection.json});
+              if (inspection.truncated) section(details, 'Display limits', {notice: 'Field list capped at depth 4, 3 entries per array, 100 rows. Expressions may also use other keys.'});
             }
-            discovery(output, 'Category discovery', data.categories, 'Open category mappings');
-            discovery(output, 'Brand discovery', data.brands, 'Open brand mappings');
+            discovery(details, 'Category discovery', categories, 'Open category mappings');
+            discovery(details, 'Brand discovery', brands, 'Open brand mappings');
+            output.appendChild(details);
             return;
           }
           section(output, 'Filter', data.filter);
@@ -195,6 +216,9 @@
     }
     test.addEventListener('click', function () { request('testSource', test); });
     configuration.addEventListener('click', function () { request('preview', configuration); });
+    if (Number(panel.dataset.source) > 0 && (form.querySelector('[name="json_url"]').value.trim() || form.querySelector('[name="json_file_path"]').value.trim())) {
+      request('testSource', test);
+    }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();

@@ -2,6 +2,8 @@
 
 use ProductImport\Repository\SourceRepository;
 use ProductImport\Service\ImportLauncher;
+use ProductImport\Service\BackgroundImport;
+use ProductImport\Service\BackgroundImportUnsupportedException;
 use ProductImport\Service\ImportLockBusyException;
 
 if (!defined('_PS_VERSION_')) {
@@ -24,7 +26,17 @@ class ProductImportCronModuleFrontController extends ModuleFrontController
         }
         try {
             $sources = ImportLauncher::selectSources((new SourceRepository())->findAll(), 'all');
-            $json = json_encode((new ImportLauncher())->run($sources), JSON_INVALID_UTF8_SUBSTITUTE);
+            if (Tools::getValue('background') === '1') {
+                try {
+                    (new BackgroundImport())->start('all');
+                    http_response_code(202);
+                    $json = '{"started":true}';
+                } catch (BackgroundImportUnsupportedException $error) {
+                    $json = json_encode((new ImportLauncher())->run($sources), JSON_INVALID_UTF8_SUBSTITUTE);
+                }
+            } else {
+                $json = json_encode((new ImportLauncher())->run($sources), JSON_INVALID_UTF8_SUBSTITUTE);
+            }
         } catch (ImportLockBusyException $error) {
             http_response_code(409);
             $json = '{"error":"Import already running or lock unavailable"}';

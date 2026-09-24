@@ -1,4 +1,4 @@
-<div id="pi-run-list" class="panel" data-url="{$pi_run_url|escape:'html':'UTF-8'}">
+<div id="pi-run-list" class="panel" data-url="{$pi_run_url|escape:'html':'UTF-8'}" data-baseline="{$pi_run_baseline|intval}">
   <h3>Run import</h3>
   <label for="pi-run-source">Sources</label>
   <select id="pi-run-source">

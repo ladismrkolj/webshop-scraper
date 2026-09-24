@@ -21,6 +21,23 @@ class ImportLauncher
         throw new \InvalidArgumentException('Source not found.');
     }
 
+    public static function isRunning(): bool
+    {
+        $lock = fopen(_PS_CACHE_DIR_ . 'productimport-cron.lock', 'c');
+        if ($lock === false) {
+            throw new ImportLockBusyException('Import already running or lock unavailable');
+        }
+        try {
+            if (!flock($lock, LOCK_EX | LOCK_NB)) {
+                return true;
+            }
+            flock($lock, LOCK_UN);
+            return false;
+        } finally {
+            fclose($lock);
+        }
+    }
+
     public function run(array $sources): array
     {
         $lock = fopen(_PS_CACHE_DIR_ . 'productimport-cron.lock', 'c');

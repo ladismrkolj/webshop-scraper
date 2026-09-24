@@ -244,3 +244,13 @@ The same tab contains optional variants. Select a discovered list of objects or 
 
 
 PHP gates do not exercise DOM/Smarty interaction. Live-check unsaved Test source, saved-source discovery, dropdown population, mid-expression insertion/selection replacement, clearing fixed rows and saving/reopening, custom and combination add/remove controls, and the renamed Test configuration response on PS9.1.5. Category and brand mappings are managed in their source editor tabs.
+
+## Background imports
+
+Run the daily import as the web user with a CLI cron entry:
+
+```cron
+0 3 * * * /usr/bin/php /path/to/modules/productimport/bin/import.php all
+```
+
+The CLI also accepts a source ID, including an inactive source. The admin Run import buttons start a background CLI process and show live run status; if process spawning is unavailable, they run inline. The tokenized cron URL remains synchronous by default. Append `&background=1` to start a background import and receive HTTP 202 with `{"started":true}`; unsupported spawning falls back to the synchronous response. Image downloads and thumbnails are generated inside the background process. Background logs are written to the PrestaShop cache directory as `productimport-run-*.log`.

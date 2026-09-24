@@ -34,6 +34,24 @@ class ImportRunRepository
         return mb_strcut($log, 0, self::LOG_LIMIT - 16, 'UTF-8') . "\n[log truncated]";
     }
 
+    public function maxId(): int
+    {
+        return (int) \Db::getInstance()->getValue('SELECT COALESCE(MAX(`id_run`), 0) FROM `' . _DB_PREFIX_ . 'pi_import_run`');
+    }
+
+    public function findAfter(array $sourceIds, int $baseline): array
+    {
+        if ($sourceIds === []) {
+            return [];
+        }
+        $ids = implode(', ', array_map('intval', $sourceIds));
+        $rows = \Db::getInstance()->executeS('SELECT r.*, s.`name` AS `source_name` FROM `' . _DB_PREFIX_ . 'pi_import_run` r LEFT JOIN `' . _DB_PREFIX_ . 'pi_source` s ON s.`id_source` = r.`id_source` WHERE r.`id_run` > ' . (int) $baseline . ' AND r.`id_source` IN (' . $ids . ') ORDER BY r.`id_run` ASC');
+        if ($rows === false) {
+            throw new \RuntimeException('Unable to read import runs.');
+        }
+        return $rows;
+    }
+
     public function findRecent(int $idSource, int $limit = 20): array
     {
         return $this->read(' WHERE r.`id_source` = ' . (int) $idSource, $limit);

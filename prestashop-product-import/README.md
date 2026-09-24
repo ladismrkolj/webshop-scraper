@@ -17,7 +17,7 @@ Steps 2–6: source configuration, JSON fetching, mapping expressions, filters, 
 7. **Save again.**
 8. Click **"Test configuration"** to run one real item through the whole pipeline (filter → mapping → category/manufacturer resolution) without writing anything to the database, and confirm the resolved values look right.
 9. If you mapped `category_paths`, click **"Discover categories from full JSON"** — this scans *every* item in the source (not just the preview one) and records every unique category path it finds, without creating anything. Open the Categories tab to see the full list and, for any path, override "auto-create" with an existing store category via the dropdown. The Brands tab works the same way. Defaults and overrides save immediately, independently of the main Save button. Paths left as "auto-create" get a fresh category chain created for them automatically the first time a real import needs them.
-10. Once satisfied, either wait for the daily cron (URL shown at the top of the source list — set up your server's scheduler to hit it once a day, see "Daily cron and run logs" below) or trigger it manually by opening that URL yourself to run a real import now.
+10. Once satisfied, click **Run import now** on the saved source editor to import that source, or choose **All active sources** or one source in the source list panel. Set up the daily cron URL shown on the source list for automatic runs (see "Daily cron and run logs" below).
 
 ## Development
 
@@ -108,6 +108,8 @@ Configure your server's scheduler (the module does not edit the server crontab),
 ```cron
 0 3 * * * /usr/bin/curl --fail --silent --show-error 'PASTE_FULL_CRON_URL_HERE' >> /path/to/productimport-cron.log 2>&1
 ```
+
+The source list Run import panel runs all active sources by default or one selected source, including an inactive one. The saved source editor also runs that source from its saved configuration; unsaved edits are ignored. A confirmation warns when a single source deactivates missing products. Results show per-source counts and errors, with a link to the runs log. Manual and cron imports share the same lock and execution path.
 
 The endpoint disables PHP's execution time limit, but web-server/proxy timeouts still require deployment configuration for large catalogs. It takes a nonblocking local `flock` in the PrestaShop cache directory to prevent overlapping requests on this server. Concurrent imports across separate hosts without a shared lock filesystem are not serialized. Treat the copied URL as a secret. Inspect the JSON `runs[].status` even when the HTTP request succeeds; per-source failures do not produce a transport error.
 

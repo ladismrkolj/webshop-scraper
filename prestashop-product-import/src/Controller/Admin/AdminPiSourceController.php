@@ -24,7 +24,7 @@ class AdminPiSourceController extends ModuleAdminController
 
     public function postProcess()
     {
-        $actions = ['testSource' => 'ajaxProcessTestSource', 'preview' => 'ajaxProcessPreview', 'inspect' => 'ajaxProcessInspect', 'discoverCategories' => 'ajaxProcessDiscoverCategories', 'mappings' => 'ajaxProcessMappings', 'saveMapping' => 'ajaxProcessSaveMapping', 'saveDefault' => 'ajaxProcessSaveDefault'];
+        $actions = ['runImport' => 'ajaxProcessRunImport', 'testSource' => 'ajaxProcessTestSource', 'preview' => 'ajaxProcessPreview', 'inspect' => 'ajaxProcessInspect', 'discoverCategories' => 'ajaxProcessDiscoverCategories', 'mappings' => 'ajaxProcessMappings', 'saveMapping' => 'ajaxProcessSaveMapping', 'saveDefault' => 'ajaxProcessSaveDefault'];
         $action = Tools::getValue('action');
         if ($this->ajax && is_string($action) && isset($actions[$action])) {
             $this->{$actions[$action]}();
@@ -68,6 +68,39 @@ class AdminPiSourceController extends ModuleAdminController
                 $this->display = $id > 0 ? 'edit' : 'add';
             }
         }
+    }
+
+    public function ajaxProcessRunImport()
+    {
+        try {
+            if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || !$this->checkToken() || !$this->access('edit')) {
+                throw new RuntimeException('Permission denied or invalid security token.');
+            }
+            $raw = $_POST['id_source'] ?? null;
+            if (!is_string($raw) || ($raw !== 'all' && (!ctype_digit($raw) || (int) $raw <= 0 || (string) (int) $raw !== $raw))) {
+                throw new InvalidArgumentException('id_source must be all or a positive integer.');
+            }
+            $selection = $raw === 'all' ? 'all' : (int) $raw;
+            $sources = \ProductImport\Service\ImportLauncher::selectSources($this->sources->findAll(), $selection);
+            set_time_limit(0);
+            $result = (new \ProductImport\Service\ImportLauncher())->run($sources);
+            $names = array_column($sources, 'name', 'id_source');
+            foreach ($result['runs'] as &$run) {
+                $run['name'] = $names[$run['id_source']] ?? '';
+            }
+            unset($run);
+            $result['runs_url'] = $this->context->link->getAdminLink('AdminPiRunLog') . ($selection === 'all' ? '' : '&id_source=' . $selection);
+        } catch (\ProductImport\Service\ImportLockBusyException $error) {
+            http_response_code(409);
+            $result = ['error' => $error->getMessage()];
+        } catch (InvalidArgumentException $error) {
+            http_response_code(400);
+            $result = ['error' => $error->getMessage()];
+        } catch (Throwable $error) {
+            http_response_code(500);
+            $result = ['error' => $error->getMessage()];
+        }
+        $this->sendJson($result);
     }
 
     public function ajaxProcessPreview()
@@ -419,9 +452,17 @@ class AdminPiSourceController extends ModuleAdminController
             }
         }
         $cronUrl = $this->context->link->getModuleLink('productimport', 'cron', ['token' => Configuration::get('PIIMPORT_CRON_TOKEN')], true);
-        $banner = '<div class="alert alert-info">Daily cron URL: <code>' . Tools::safeOutput($cronUrl) . '</code></div>';
         $sources = $this->sources->findAll();
-        return $banner . $helper->generateList($sources, [
+        $panel = '';
+        if ($this->access('edit')) {
+            $this->context->smarty->assign([
+                'pi_run_url' => $this->context->link->getAdminLink('AdminPiSource'),
+                'pi_run_sources' => $sources,
+                'pi_run_log_url' => $this->context->link->getAdminLink('AdminPiRunLog'),
+            ]);
+            $panel = $this->context->smarty->fetch(dirname(__DIR__, 3) . '/views/templates/admin/run_import.tpl');
+        }
+        return '<div class="alert alert-info">Daily cron URL: <code>' . Tools::safeOutput($cronUrl) . '</code></div>' . $panel . $helper->generateList($sources, [
             'name' => ['title' => $this->trans('Name')],
             'technical_key' => ['title' => $this->trans('Technical key')],
             'active' => ['title' => $this->trans('Active'), 'type' => 'bool'],
@@ -483,7 +524,7 @@ class AdminPiSourceController extends ModuleAdminController
             }, $variant['attributes'] ?? []),
             'pi_variant_field_rows' => $variant['field_rows'] ?? $variantFields,
         ]);
-        $this->context->smarty->assign(['pi_can_discover' => $this->access('edit'), 'pi_preview_id' => $id, 'pi_preview_url' => $this->context->link->getAdminLink('AdminPiSource')]);
+        $this->context->smarty->assign(['pi_can_discover' => $this->access('edit'), 'pi_preview_id' => $id, 'pi_preview_url' => $this->context->link->getAdminLink('AdminPiSource'), 'pi_run_log_url' => $this->context->link->getAdminLink('AdminPiRunLog'), 'pi_run_name' => $source['name'], 'pi_run_deactivate' => $source['deactivate_missing'], 'pi_can_run' => $this->access('edit')]);
         $testHtml = $this->context->smarty->fetch(dirname(__DIR__, 3) . '/views/templates/admin/preview.tpl');
         $mappingHtml = $this->context->smarty->fetch(dirname(__DIR__, 3) . '/views/templates/admin/source_form.tpl');
         $helpTemplate = $this->context->smarty->createTemplate(dirname(__DIR__, 3) . '/views/templates/admin/source_form.tpl');

@@ -283,3 +283,68 @@ Upgrade to 0.12.0 and choose **Format: XML** on the General tab. Enter the XML f
 Use `products/product` as the item path. The first item exposes flattened field keys `["@attributes"].id`, `name`, `categories.category[0]`, and `categories.category[1]` for mapping. XML sources support Test source, Sample values, filtering, category and brand discovery, and variants just like JSON sources after conversion. Existing sources default to JSON.
 
 `@attributes` and `@value` are synthetic metadata keys invented by this module during XML conversion, not fields in the supplier's XML. For example, `<dobava id="1">Na zalogi</dobava>` becomes `{"@attributes": {"id": "1"}, "@value": "Na zalogi"}`.
+
+## Shipping
+
+The module has no shipping-specific fields beyond `weight`. Two ways to set up weight-based and oversized-item shipping, both using PrestaShop's own features:
+
+**1. Estimated weight by category.** When a source has no real per-item weight, map `weight` to an expression that assigns an estimate by category, the same pattern used for tiered stock values elsewhere in this README:
+
+```
+fields['category'] == 'Boards' ? 8 : (
+fields['category'] == 'Sails' ? 3 : (
+fields['category'] == 'Harness Lines' ? 0.3 : 1
+))
+```
+
+PrestaShop's carriers already price by weight range (Shipping > Carriers > a carrier > "Shipping locations and costs"), so once `weight` is populated this way, normal carrier pricing applies without any other setup.
+
+**2. Route oversized items to a "request a quote" carrier.** For items too large or awkward for a priced carrier:
+- Create a carrier with no real price logic: Shipping > Carriers > **Add new carrier**, name it e.g. "Contact us for shipping", set a transit time, and leave its price ranges empty or nominal.
+- On each affected product: Catalog > Products > the product > **Shipping** tab > **Available carriers**. Uncheck "All carriers" and check only the quote carrier. This is a per-product PrestaShop setting, not something this module's field mapping can set directly; apply it to the relevant category's products by hand, or in bulk from the product list if your PrestaShop version offers a bulk carrier-restriction action.
+
+## Cheat sheet: expressions for trickier values
+
+Patterns worth knowing before writing expressions for any source, JSON or XML:
+
+- **Missing vs. null keys.** `fields['x']` throws if the key `x` is entirely absent from that item (common with optional/dynamically-numbered tags like XML's `dodatnaSlika1..N`, or JSON fields some items omit). Use `path(fields, 'x')` instead whenever a key might be missing outright — it checks for the key first and returns `null` safely, no error. Use plain `fields['x']` only for keys you've confirmed (via Test source or Sample values) are always present.
+- **Dots are for objects, brackets are for arrays.** `fields['a'].b` tries to read a *property* `b` on whatever `fields['a']` is, and fails on a plain array. Nested array/dict access always needs brackets all the way through, e.g. `fields['dobava']['@attributes']['id']`, never `fields['dobava']['@attributes'].id`.
+- **Tiered/enum-like values**: nested ternaries. `fields['x'] matches '/Only 1/' ? 1 : (fields['x'] matches '/More than 5/' ? 10 : 5)`. `matches '/regex/'` is a real operator (PCRE-style), not a custom syntax.
+- **Combining several optional fields into one list** (e.g. images spread across multiple differently-named tags): an array literal mixing direct access and `path()` for the optional ones, e.g. `[fields['main'], path(fields, 'extra1'), path(fields, 'extra2')]`. `null`/empty entries are fine — the importer filters them out of `images` automatically.
+- **Booleans** are lowercase `true`/`false` (not `True`/`False`).
+- **Helper functions**: `num(x)` casts to float or `null`, `str(x)` casts to string, `first(list)` takes a list's first element, `path(data, 'a.b.c')` safely walks nested keys.
+- **Discount pairs must use the same scaling.** If `price` applies a markup (e.g. `fields['price'] * 1.5`), `regular_price` must apply the *identical* markup (`fields['regular_price'] * 1.5`), or the "is this actually discounted" comparison breaks since one side is inflated and the other isn't.
+
+### Cheat sheet: Recharge (XML)
+
+Format: **XML**, XML item path: `izdelki/izdelek`. Raw tags on each `<izdelek>`: `izdelekID`, `izdelekIme`, `opis` (HTML description), `slikaVelika` (main image), `dodatnaSlika1`..`dodatnaSlika10` (extra images, not always present), `PPC` (price), `nabavnaCena` (cost), `davcnaStopnja` (tax rate), `kategorija`/`blagovnaZnamka`/`dobava` (each an `id` attribute plus text — see `@attributes`/`@value` above), `EAN`, `netoTeza`/`brutoTeza` (weight), `tarifnaStevilka` (customs code).
+
+| Field | Expression |
+|---|---|
+| Identifier | `izdelekID` |
+| `name` | `fields['izdelekIme']` |
+| `price` | `fields['PPC']` |
+| `wholesale_price` | `fields['nabavnaCena']` |
+| `description` / `description_short` | `fields['opis']` (short is auto-truncated to a safe length) |
+| `category_paths` | `fields['kategorija']['@value']` |
+| `manufacturer` | `fields['blagovnaZnamka']['@value']` |
+| `ean13` | `fields['EAN']` |
+| `active` | `fields['dobava']['@attributes']['id'] == '1'` |
+| `quantity` | `fields['dobava']['@attributes']['id'] == '1' ? 5 : 0` (real counts aren't in this feed; `'1'` means in stock, `''` means not) |
+| `images` | `[fields['slikaVelika'], path(fields, 'dodatnaSlika1'), path(fields, 'dodatnaSlika2'), path(fields, 'dodatnaSlika3'), path(fields, 'dodatnaSlika4'), path(fields, 'dodatnaSlika5'), path(fields, 'dodatnaSlika6'), path(fields, 'dodatnaSlika7'), path(fields, 'dodatnaSlika8'), path(fields, 'dodatnaSlika9'), path(fields, 'dodatnaSlika10')]` |
+
+### Cheat sheet: JSON (easy-surfshop-style feeds)
+
+Format: **JSON**. Typical shape: a top-level array of products with `product_id`, `name`, `price`, optional `regular_price` (present only when discounted), `brand`, a `category` string or a `breadcrumbs` chain, an `images` list, and an optional `variants` list of objects.
+
+| Field | Expression |
+|---|---|
+| Identifier | `product_id` |
+| `price` | `fields['price']` (add `* 1.5` etc. for a markup — see the discount note above if also mapping `regular_price`) |
+| `regular_price` | `fields['regular_price']` (same markup as `price` if any) |
+| `category_paths` | `fields['category']` (single name) or `fields['breadcrumbs']` (a chain; hierarchy only matters for auto-create, override on the Categories tab either way) |
+| `manufacturer` | `fields['brand']` |
+| `quantity` from a text tier (e.g. `stock_info: "More than 5 pcs available"`) | `fields['stock_info'] matches '/Only 1/' ? 1 : (fields['stock_info'] matches '/More than 5/' ? 10 : 5)` |
+| Variants list | pick the discovered list field, e.g. `fields['variants']` |
+| Variant attribute (e.g. Size), with a fallback when the feed sometimes leaves it blank | `variant['size'] !== null ? variant['size'] : variant['name']` |
+| Variant `quantity` split across two stock pools | `num(variant['quantity_external']) + num(variant['quantity_internal'])` |

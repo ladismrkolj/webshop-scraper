@@ -101,6 +101,8 @@ PreviewBuilder tests use handwritten resolver doubles (asserting commit=false), 
 
 ## Daily cron and run logs (step 6)
 
+Each run records how it started. The runs log and live admin status show `cron` for the synchronous cron URL, `cron-background` for that URL with `&background=1`, `admin-background` for an admin button background run, `admin-manual` for its inline fallback, and `cli` for a direct `php bin/import.php all|<id_source>` invocation. Historical runs show `unknown`. Background spawning passes its original trigger as the optional second CLI argument: `php bin/import.php all|<id_source> [cli|cron-background|admin-background]`.
+
 Install the module in PrestaShop 9, configure and preview each source, then copy the full HTTPS cron URL from the source list. It is built using `getModuleLink('productimport', 'cron', ['token' => ...], true)`. The legacy endpoint is `index.php?fc=module&module=productimport&controller=cron&token=SECRET`, implemented by `controllers/front/cron.php` / `ProductImportCronModuleFrontController::postProcess()`. The endpoint outputs JSON and exits before theme rendering. Install generates a 40-hex-character secret using `random_bytes(20)`; uninstall removes it. Token comparison rejects absent/empty tokens and uses `hash_equals`.
 
 Configure your server's scheduler (the module does not edit the server crontab), for example daily at 03:00:

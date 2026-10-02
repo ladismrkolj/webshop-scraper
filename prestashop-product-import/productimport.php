@@ -12,7 +12,7 @@ class ProductImport extends Module
     {
         $this->name = 'productimport';
         $this->tab = 'administration';
-        $this->version = '0.9.0';
+        $this->version = '0.10.0';
         $this->author = 'Product Import';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -101,6 +101,7 @@ class ProductImport extends Module
             `started_at` DATETIME NOT NULL,
             `finished_at` DATETIME NULL,
             `status` VARCHAR(32) NOT NULL,
+            `triggered_by` VARCHAR(32) NULL,
             `created_count` INT UNSIGNED NOT NULL DEFAULT 0,
             `updated_count` INT UNSIGNED NOT NULL DEFAULT 0,
             `skipped_count` INT UNSIGNED NOT NULL DEFAULT 0,

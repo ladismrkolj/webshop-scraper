@@ -34,7 +34,8 @@ class AdminPiRunLogController extends ModuleAdminController
         $rows = $idSource > 0 ? $repository->findRecent($idSource) : $repository->findAll();
         // HelperList text columns are not consistently autoescaped across legacy themes.
         foreach ($rows as &$row) {
-            foreach (['source_name', 'status', 'error_log'] as $field) {
+            $row['triggered_by'] = $row['triggered_by'] ?: 'unknown';
+            foreach (['source_name', 'status', 'triggered_by', 'error_log'] as $field) {
                 $row[$field] = Tools::safeOutput((string) ($row[$field] ?? ''));
             }
         }
@@ -48,7 +49,7 @@ class AdminPiRunLogController extends ModuleAdminController
         $helper->simple_header = true;
         $helper->actions = [];
         $fields = [];
-        foreach (['source_name' => 'Source', 'started_at' => 'Started', 'finished_at' => 'Finished', 'status' => 'Status', 'created_count' => 'Created', 'updated_count' => 'Updated', 'skipped_count' => 'Skipped', 'failed_count' => 'Failed', 'error_log' => 'Errors'] as $key => $label) {
+        foreach (['source_name' => 'Source', 'started_at' => 'Started', 'finished_at' => 'Finished', 'status' => 'Status', 'triggered_by' => 'Triggered by', 'created_count' => 'Created', 'updated_count' => 'Updated', 'skipped_count' => 'Skipped', 'failed_count' => 'Failed', 'error_log' => 'Errors'] as $key => $label) {
             $fields[$key] = ['title' => $this->trans($label)];
         }
         return $helper->generateList($rows, $fields);

@@ -17,13 +17,14 @@ class BackgroundImport
         return (string) $selection;
     }
 
-    public static function buildCommand(string $php, string $script, $selection, string $logFile, bool $nice = false): string
+    public static function buildCommand(string $php, string $script, $selection, string $triggeredBy, string $logFile, bool $nice = false): string
     {
+        // bin/import.php expects selection first, then the original trigger label.
         $argument = self::selectionArgument($selection);
-        return 'nohup ' . ($nice ? 'nice -n 10 ' : '') . escapeshellarg($php) . ' ' . escapeshellarg($script) . ' ' . escapeshellarg($argument) . ' > ' . escapeshellarg($logFile) . ' 2>&1 &';
+        return 'nohup ' . ($nice ? 'nice -n 10 ' : '') . escapeshellarg($php) . ' ' . escapeshellarg($script) . ' ' . escapeshellarg($argument) . ' ' . escapeshellarg($triggeredBy) . ' > ' . escapeshellarg($logFile) . ' 2>&1 &';
     }
 
-    public function start($selection): array
+    public function start($selection, string $triggeredBy): array
     {
         self::selectionArgument($selection);
         $php = PHP_BINDIR . '/php';
@@ -38,7 +39,7 @@ class BackgroundImport
         $baseline = (new ImportRunRepository())->maxId();
         $log = _PS_CACHE_DIR_ . 'productimport-run-' . date('Ymd-His') . '-' . bin2hex(random_bytes(3)) . '.log';
         $nice = is_executable('/usr/bin/nice') || is_executable('/bin/nice');
-        $command = self::buildCommand($php, $script, $selection, $log, $nice);
+        $command = self::buildCommand($php, $script, $selection, $triggeredBy, $log, $nice);
         exec($command, $output, $status);
         if ($status !== 0) {
             throw new BackgroundImportUnsupportedException('Unable to start background import.');

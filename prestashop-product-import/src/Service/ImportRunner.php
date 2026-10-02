@@ -27,10 +27,10 @@ class ImportRunner
     }
 
     /** Source mapping columns must be decoded by the caller, as for PreviewBuilder. */
-    public function runOne(array $source): array
+    public function runOne(array $source, string $triggeredBy): array
     {
         $idSource = (int) $source['id_source'];
-        $idRun = $this->runs->start($idSource);
+        $idRun = $this->runs->start($idSource, $triggeredBy);
         $counts = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0];
         $log = '';
         try {
@@ -38,7 +38,7 @@ class ImportRunner
         } catch (\Throwable $error) {
             $log = ImportRunRepository::capLog($error->getMessage());
             $this->runs->finish($idRun, 'failed', $counts, $log);
-            return ['id_source' => $idSource, 'id_run' => $idRun, 'status' => 'failed', 'counts' => $counts, 'error_log' => $log];
+            return ['id_source' => $idSource, 'id_run' => $idRun, 'status' => 'failed', 'triggered_by' => $triggeredBy, 'counts' => $counts, 'error_log' => $log];
         }
         foreach ($items as $index => $item) {
             try {
@@ -126,10 +126,10 @@ class ImportRunner
         }
         $status = $counts['failed'] > 0 ? 'completed_with_errors' : 'completed';
         $this->runs->finish($idRun, $status, $counts, $log);
-        return ['id_source' => $idSource, 'id_run' => $idRun, 'status' => $status, 'counts' => $counts, 'error_log' => $log];
+        return ['id_source' => $idSource, 'id_run' => $idRun, 'status' => $status, 'triggered_by' => $triggeredBy, 'counts' => $counts, 'error_log' => $log];
     }
 
-    public function runAll(array $sources): array
+    public function runAll(array $sources, string $triggeredBy): array
     {
         $results = [];
         foreach ($sources as $source) {
@@ -137,9 +137,9 @@ class ImportRunner
                 continue;
             }
             try {
-                $results[] = $this->runOne($source);
+                $results[] = $this->runOne($source, $triggeredBy);
             } catch (\Throwable $error) {
-                $results[] = ['id_source' => $source['id_source'], 'status' => 'failed', 'counts' => ['created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0], 'error_log' => ImportRunRepository::capLog($error->getMessage())];
+                $results[] = ['id_source' => $source['id_source'], 'status' => 'failed', 'triggered_by' => $triggeredBy, 'counts' => ['created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0], 'error_log' => ImportRunRepository::capLog($error->getMessage())];
             }
         }
         return $results;

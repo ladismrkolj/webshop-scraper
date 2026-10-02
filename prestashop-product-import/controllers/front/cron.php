@@ -28,14 +28,14 @@ class ProductImportCronModuleFrontController extends ModuleFrontController
             $sources = ImportLauncher::selectSources((new SourceRepository())->findAll(), 'all');
             if (Tools::getValue('background') === '1') {
                 try {
-                    (new BackgroundImport())->start('all');
+                    (new BackgroundImport())->start('all', 'cron-background');
                     http_response_code(202);
                     $json = '{"started":true}';
                 } catch (BackgroundImportUnsupportedException $error) {
-                    $json = json_encode((new ImportLauncher())->run($sources), JSON_INVALID_UTF8_SUBSTITUTE);
+                    $json = json_encode((new ImportLauncher())->run($sources, 'cron'), JSON_INVALID_UTF8_SUBSTITUTE);
                 }
             } else {
-                $json = json_encode((new ImportLauncher())->run($sources), JSON_INVALID_UTF8_SUBSTITUTE);
+                $json = json_encode((new ImportLauncher())->run($sources, 'cron'), JSON_INVALID_UTF8_SUBSTITUTE);
             }
         } catch (ImportLockBusyException $error) {
             http_response_code(409);

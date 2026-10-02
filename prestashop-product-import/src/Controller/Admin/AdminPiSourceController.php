@@ -83,11 +83,11 @@ class AdminPiSourceController extends ModuleAdminController
             $selection = $raw === 'all' ? 'all' : (int) $raw;
             $sources = \ProductImport\Service\ImportLauncher::selectSources($this->sources->findAll(), $selection);
             try {
-                $result = (new \ProductImport\Service\BackgroundImport())->start($selection);
+                $result = (new \ProductImport\Service\BackgroundImport())->start($selection, 'admin-background');
                 $result['mode'] = 'background';
             } catch (\ProductImport\Service\BackgroundImportUnsupportedException $error) {
                 set_time_limit(0);
-                $result = (new \ProductImport\Service\ImportLauncher())->run($sources);
+                $result = (new \ProductImport\Service\ImportLauncher())->run($sources, 'admin-manual');
                 $names = array_column($sources, 'name', 'id_source');
                 foreach ($result['runs'] as &$run) {
                     $run['name'] = $names[$run['id_source']] ?? '';
@@ -130,6 +130,7 @@ class AdminPiSourceController extends ModuleAdminController
             foreach ($rows as $row) {
                 $runs[] = ['id_run' => (int) $row['id_run'], 'id_source' => (int) $row['id_source'],
                     'name' => (string) ($row['source_name'] ?? ''), 'status' => $row['status'],
+                    'triggered_by' => $row['triggered_by'] ?? null,
                     'counts' => ['created' => (int) $row['created_count'], 'updated' => (int) $row['updated_count'],
                         'skipped' => (int) $row['skipped_count'], 'failed' => (int) $row['failed_count']],
                     'error_log' => (string) ($row['error_log'] ?? '')];

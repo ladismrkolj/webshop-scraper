@@ -7,8 +7,8 @@ class BackgroundImportTest extends TestCase
 {
     public function testCommandQuotesArgumentsAndRedirectsLog(): void
     {
-        self::assertSame("nohup '/path/php cli' '/module/bin/import.php' 'all' > '/tmp/run log' 2>&1 &", BackgroundImport::buildCommand('/path/php cli', '/module/bin/import.php', 'all', '/tmp/run log'));
-        self::assertSame("nohup nice -n 10 '/php' '/script' '7' > '/log' 2>&1 &", BackgroundImport::buildCommand('/php', '/script', 7, '/log', true));
+        self::assertSame("nohup '/path/php cli' '/module/bin/import.php' 'all' 'cron-background' > '/tmp/run log' 2>&1 &", BackgroundImport::buildCommand('/path/php cli', '/module/bin/import.php', 'all', 'cron-background', '/tmp/run log'));
+        self::assertSame("nohup nice -n 10 '/php' '/script' '7' 'admin-background' > '/log' 2>&1 &", BackgroundImport::buildCommand('/php', '/script', 7, 'admin-background', '/log', true));
     }
 
     public function testSelectionValidation(): void

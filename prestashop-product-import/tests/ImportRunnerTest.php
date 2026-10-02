@@ -14,7 +14,7 @@ class ImportRunnerTest extends TestCase
     {
         $state = (object) ['products' => ['old' => ['id_product' => 10, 'id_run_last_seen' => null], 'stale' => ['id_product' => 11, 'id_run_last_seen' => 1]],
             'combinations' => ['old:stale' => ['id_product' => 10, 'id_product_attribute' => 50, 'id_run_last_seen' => null]],
-            'deactivated' => [], 'zeroed' => [], 'finished' => [], 'prices' => [], 'staleCalls' => 0];
+            'triggers' => [], 'deactivated' => [], 'zeroed' => [], 'finished' => [], 'prices' => [], 'staleCalls' => 0];
         $fetcher = new class ($items, $fetchFails) extends JsonFetcher {
             public function __construct(private array $items, private bool $fails)
             {
@@ -63,8 +63,9 @@ class ImportRunnerTest extends TestCase
             public function __construct(private object $state)
             {
             }
-            public function start(int $source): int
+            public function start(int $source, string $triggeredBy): int
             {
+                $this->state->triggers[] = $triggeredBy;
                 if ($source === 99) {
                     throw new \RuntimeException('start failed');
                 }
@@ -162,7 +163,7 @@ class ImportRunnerTest extends TestCase
     public function testMixedItemsAndCleanupOnlyStaleLinks(): void
     {
         [$runner, $state] = $this->fixture([['id' => 'old'], ['id' => 'new'], ['id' => 'skip', 'skip' => true], [], ['id' => 'broken']]);
-        $result = $runner->runOne($this->source(['deactivate_missing' => true]));
+        $result = $runner->runOne($this->source(['deactivate_missing' => true]), 'admin-manual');
         self::assertSame(['created' => 1, 'updated' => 1, 'skipped' => 1, 'failed' => 2], $result['counts']);
         self::assertSame('completed_with_errors', $result['status']);
         self::assertStringContainsString('item 3: missing identifier_field value', $result['error_log']);
@@ -171,12 +172,13 @@ class ImportRunnerTest extends TestCase
         self::assertSame([[10, 50]], $state->zeroed);
         self::assertSame(20, $state->products['old']['id_run_last_seen']);
         self::assertSame($result['counts'], $state->finished[0]['counts']);
+        self::assertSame(['admin-manual'], $state->triggers);
     }
 
     public function testFetchFailureNeverCleansUp(): void
     {
         [$runner, $state] = $this->fixture([], true);
-        $result = $runner->runOne($this->source(['deactivate_missing' => true]));
+        $result = $runner->runOne($this->source(['deactivate_missing' => true]), 'admin-manual');
         self::assertSame('failed', $result['status']);
         self::assertSame('fetch failed', $result['error_log']);
         self::assertSame(0, $state->staleCalls);
@@ -187,7 +189,7 @@ class ImportRunnerTest extends TestCase
     public function testVariantsUseSavedPriceAndContinueAfterFailure(): void
     {
         [$runner, $state] = $this->fixture([['id' => 'old', 'variants' => [['sku' => 'bad'], ['sku' => 'good']]]]);
-        $result = $runner->runOne($this->source(['deactivate_missing' => true, 'variant_mapping' => ['variants_expression' => 'fields["variants"]', 'attributes' => [['name' => 'Size', 'expression' => '"M"']], 'fields' => ['reference' => 'variant["sku"]']]]));
+        $result = $runner->runOne($this->source(['deactivate_missing' => true, 'variant_mapping' => ['variants_expression' => 'fields["variants"]', 'attributes' => [['name' => 'Size', 'expression' => '"M"']], 'fields' => ['reference' => 'variant["sku"]']]]), 'admin-manual');
         self::assertSame(1, $result['counts']['updated']);
         self::assertSame(1, $result['counts']['failed']);
         self::assertSame([123.5, 123.5], $state->prices);
@@ -198,7 +200,7 @@ class ImportRunnerTest extends TestCase
     public function testBrokenFilterIsIsolatedPerItem(): void
     {
         [$runner, $state] = $this->fixture([['id' => 'old'], ['id' => 'new']]);
-        $result = $runner->runOne($this->source(['filter_expression' => 'fields[']));
+        $result = $runner->runOne($this->source(['filter_expression' => 'fields[']), 'admin-manual');
         self::assertSame(2, $result['counts']['failed']);
         self::assertSame(0, $result['counts']['created']);
         self::assertNull($state->products['old']['id_run_last_seen']);
@@ -209,7 +211,7 @@ class ImportRunnerTest extends TestCase
         [$runner, $state] = $this->fixture([['id' => 'new']]);
         $source = $this->source();
         $source['field_mapping']['bad'] = 'fields[';
-        $result = $runner->runOne($source);
+        $result = $runner->runOne($source, 'admin-manual');
         self::assertSame(1, $result['counts']['created']);
         self::assertStringContainsString('field bad', $result['error_log']);
         self::assertSame(0, $state->staleCalls);
@@ -222,10 +224,11 @@ class ImportRunnerTest extends TestCase
     public function testRunAllSkipsInactiveAndSurvivesStartFailure(): void
     {
         [$runner, $state] = $this->fixture([]);
-        $results = $runner->runAll([$this->source(['active' => 0]), $this->source(['id_source' => 99]), $this->source()]);
+        $results = $runner->runAll([$this->source(['active' => 0]), $this->source(['id_source' => 99]), $this->source()], 'cron-background');
         self::assertCount(2, $results);
         self::assertSame('failed', $results[0]['status']);
         self::assertSame('completed', $results[1]['status']);
         self::assertCount(1, $state->finished);
+        self::assertSame(['cron-background', 'cron-background'], $state->triggers);
     }
 }

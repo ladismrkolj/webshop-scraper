@@ -6,9 +6,9 @@ class ImportRunRepository
 {
     public const LOG_LIMIT = 65536;
 
-    public function start(int $idSource): int
+    public function start(int $idSource, string $triggeredBy): int
     {
-        if (!\Db::getInstance()->execute('INSERT INTO `' . _DB_PREFIX_ . 'pi_import_run` (`id_source`, `started_at`, `status`) VALUES (' . (int) $idSource . ", NOW(), '" . pSQL('running') . "')")) {
+        if (!\Db::getInstance()->execute('INSERT INTO `' . _DB_PREFIX_ . 'pi_import_run` (`id_source`, `started_at`, `status`, `triggered_by`) VALUES (' . (int) $idSource . ", NOW(), '" . pSQL('running') . "', '" . pSQL($triggeredBy) . "')")) {
             throw new \RuntimeException('Unable to start import run.');
         }
         return (int) \Db::getInstance()->Insert_ID();

@@ -38,7 +38,7 @@ class ImportLauncher
         }
     }
 
-    public function run(array $sources): array
+    public function run(array $sources, string $triggeredBy): array
     {
         $lock = fopen(_PS_CACHE_DIR_ . 'productimport-cron.lock', 'c');
         if ($lock === false || !flock($lock, LOCK_EX | LOCK_NB)) {
@@ -69,15 +69,15 @@ class ImportLauncher
                     $counts = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0];
                     $message = $error->getMessage();
                     try {
-                        $idRun = $runs->start((int) $source['id_source']);
+                        $idRun = $runs->start((int) $source['id_source'], $triggeredBy);
                         $runs->finish($idRun, 'failed', $counts, $message);
                     } catch (\Throwable $loggingError) {
                         $message .= '; unable to record run: ' . $loggingError->getMessage();
                     }
-                    $results[] = ['id_source' => $source['id_source'], 'status' => 'failed', 'counts' => $counts, 'error_log' => $message];
+                    $results[] = ['id_source' => $source['id_source'], 'status' => 'failed', 'triggered_by' => $triggeredBy, 'counts' => $counts, 'error_log' => $message];
                 }
             }
-            return ['runs' => array_merge($results, ImportRunnerFactory::create()->runAll($ready))];
+            return ['runs' => array_merge($results, ImportRunnerFactory::create()->runAll($ready, $triggeredBy))];
         } finally {
             flock($lock, LOCK_UN);
             fclose($lock);

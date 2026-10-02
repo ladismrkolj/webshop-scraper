@@ -60,8 +60,16 @@ class ProductImporter
         if (isset($mappedValues['price'])) {
             $product->price = (float) $mappedValues['price'];
         }
-        $product->weight = (float) ($mappedValues['weight'] ?? 0.0);
-        $product->active = (bool) ($mappedValues['active'] ?? true);
+        if (isset($mappedValues['weight'])) {
+            $product->weight = (float) $mappedValues['weight'];
+        } elseif ($isNew) {
+            $product->weight = 0.0;
+        }
+        if (isset($mappedValues['active'])) {
+            $product->active = (bool) $mappedValues['active'];
+        } elseif ($isNew) {
+            $product->active = true;
+        }
         if ($idManufacturer !== null) {
             $product->id_manufacturer = $idManufacturer;
         }

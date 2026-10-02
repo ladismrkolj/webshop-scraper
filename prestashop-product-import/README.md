@@ -268,3 +268,18 @@ Run `php bin/dedupe-images.php all` or `php bin/dedupe-images.php <id_source>` f
 Upgrade to 0.11.0 before saving sources. The General tab's **Supplier** dropdown tags every imported product from that source with one supplier. Create suppliers under Catalog > Brands & Suppliers. Clearing the dropdown leaves existing product suppliers untouched.
 
 The Product fields tab adds optional `wholesale_price` (your cost price, separate from the retail price customers pay and not shown to customers) and `regular_price`. When both `regular_price` and `price` are mapped and the regular price is higher, the product's base price becomes `regular_price` and an always-on, all-customer specific price overrides it with `price`. A regular price alone becomes the base price. Otherwise the module removes that discount slot. This applies to base products only; combination pricing is unchanged. If you manually create your own always-on discount on an imported product outside this module, the next import may overwrite it.
+
+### XML source feeds
+
+Upgrade to 0.12.0 and choose **Format: XML** on the General tab. Enter the XML feed URL or local file in the existing URL/file fields, then set **XML item path** to the slash-separated path from the document root to each repeating product element. For example:
+
+```xml
+<catalog><products>
+  <product id="A1"><name>Board</name><categories><category>Water</category><category>Boards</category></categories></product>
+  <product id="A2"><name>Sail</name></product>
+</products></catalog>
+```
+
+Use `products/product` as the item path. The first item exposes flattened field keys `["@attributes"].id`, `name`, `categories.category[0]`, and `categories.category[1]` for mapping. XML sources support Test source, Sample values, filtering, category and brand discovery, and variants just like JSON sources after conversion. Existing sources default to JSON.
+
+`@attributes` and `@value` are synthetic metadata keys invented by this module during XML conversion, not fields in the supplier's XML. For example, `<dobava id="1">Na zalogi</dobava>` becomes `{"@attributes": {"id": "1"}, "@value": "Na zalogi"}`.

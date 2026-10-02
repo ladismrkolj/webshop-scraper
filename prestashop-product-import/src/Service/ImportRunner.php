@@ -22,7 +22,8 @@ class ImportRunner
         private ExternalProductRepository $productLinks,
         private ExternalCombinationRepository $combinationLinks,
         private ImportRunRepository $runs,
-        private ImportCatalog $catalog
+        private ImportCatalog $catalog,
+        private ?XmlFetcher $xmlFetcher = null
     ) {
     }
 
@@ -34,7 +35,7 @@ class ImportRunner
         $counts = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0];
         $log = '';
         try {
-            $items = $this->fetcher->fetch($source['json_url'] ?? null, $source['json_file_path'] ?? null);
+            $items = FeedFetcher::fetch($source, $this->fetcher, $this->xmlFetcher);
         } catch (\Throwable $error) {
             $log = ImportRunRepository::capLog($error->getMessage());
             $this->runs->finish($idRun, 'failed', $counts, $log);

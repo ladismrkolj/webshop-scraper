@@ -12,14 +12,14 @@ class ProductImport extends Module
     {
         $this->name = 'productimport';
         $this->tab = 'administration';
-        $this->version = '0.11.0';
+        $this->version = '0.12.0';
         $this->author = 'Product Import';
         $this->need_instance = 0;
         $this->bootstrap = true;
         $this->ps_versions_compliancy = ['min' => '9.0.0', 'max' => '9.99.99'];
         parent::__construct();
         $this->displayName = $this->l('Product Import');
-        $this->description = $this->l('Configure JSON sources, filters and product field expressions.');
+        $this->description = $this->l('Configure JSON or XML sources, filters and product field expressions.');
     }
 
     public function install()
@@ -33,6 +33,8 @@ class ProductImport extends Module
             `technical_key` VARCHAR(64) NOT NULL,
             `json_url` TEXT NULL,
             `json_file_path` TEXT NULL,
+            `source_format` VARCHAR(8) NULL,
+            `xml_item_path` VARCHAR(255) NULL,
             `identifier_field` VARCHAR(191) NOT NULL,
             `filter_expression` LONGTEXT NULL,
             `field_mapping` LONGTEXT NOT NULL,

@@ -225,6 +225,8 @@
         if (Number(panel.dataset.source) > 0) body.set('id_source', panel.dataset.source);
         body.set('json_url', form.querySelector('[name="json_url"]').value);
         body.set('json_file_path', form.querySelector('[name="json_file_path"]').value);
+        body.set('source_format', form.querySelector('[name="source_format"]').value);
+        body.set('xml_item_path', form.querySelector('[name="xml_item_path"]').value);
         body.set('expression', textarea.value);
         body.set('sample_size', size.value);
         fetch(panel.dataset.url, {method: 'POST', credentials: 'same-origin', body: body})
@@ -352,6 +354,8 @@
       if (sourceTest) {
         body.set('json_url', form.querySelector('[name="json_url"]').value);
         body.set('json_file_path', form.querySelector('[name="json_file_path"]').value);
+        body.set('source_format', form.querySelector('[name="source_format"]').value);
+        body.set('xml_item_path', form.querySelector('[name="xml_item_path"]').value);
       }
       body.set('item_index', '0');
       fetch(panel.dataset.url, {method: 'POST', credentials: 'same-origin', body: body})

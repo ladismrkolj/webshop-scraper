@@ -29,7 +29,8 @@ class ImportRunnerFactory
             $products,
             $combinations,
             new ImportRunRepository(),
-            new ImportCatalog()
+            new ImportCatalog(),
+            new XmlFetcher()
         );
     }
 }

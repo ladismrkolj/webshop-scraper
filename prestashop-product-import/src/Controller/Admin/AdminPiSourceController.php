@@ -196,7 +196,7 @@ class AdminPiSourceController extends ModuleAdminController
         if (!is_string($index) || !ctype_digit($index)) {
             throw new InvalidArgumentException('item_index must be a non-negative integer.');
         }
-        $items = $fetchedItems ?? (new \ProductImport\Service\JsonFetcher())->fetch($source['json_url'], $source['json_file_path']);
+        $items = $fetchedItems ?? \ProductImport\Service\FeedFetcher::fetch($source);
         if (!array_key_exists((int) $index, $items) || !is_array($items[(int) $index])) {
             throw new InvalidArgumentException('No product object at that index.');
         }
@@ -224,7 +224,7 @@ class AdminPiSourceController extends ModuleAdminController
             if (!is_string($expression) || trim($expression) === '') {
                 throw new InvalidArgumentException('Save a category_paths expression before discovery.');
             }
-            $items = (new \ProductImport\Service\JsonFetcher())->fetch($source['json_url'], $source['json_file_path']);
+            $items = \ProductImport\Service\FeedFetcher::fetch($source);
             $result = $this->discoverValues($items, (int) $source['id_source'], $expression, false);
         } catch (Throwable $error) {
             $result = ['error' => $error->getMessage()];
@@ -248,7 +248,7 @@ class AdminPiSourceController extends ModuleAdminController
                 throw new InvalidArgumentException('Source not found.');
             }
             $input = [];
-            foreach (['json_url', 'json_file_path'] as $key) {
+            foreach (['json_url', 'json_file_path', 'source_format', 'xml_item_path'] as $key) {
                 $value = $_POST[$key] ?? null;
                 if ($value !== null && !is_string($value)) {
                     throw new InvalidArgumentException($key . ' must be a string.');
@@ -256,11 +256,11 @@ class AdminPiSourceController extends ModuleAdminController
                 $input[$key] = $value;
             }
             // Always test the submitted location, never silently substitute the saved URL/path.
-            $items = (new \ProductImport\Service\JsonFetcher())->fetch($input['json_url'], $input['json_file_path']);
+            $items = \ProductImport\Service\FeedFetcher::fetch($input);
             if ($items === []) {
-                throw new InvalidArgumentException('Source JSON must be a non-empty array.');
+                throw new InvalidArgumentException('Source feed must contain products.');
             }
-            $result = ['connectivity' => ['ok' => true, 'format' => 'non-empty JSON array'], 'item_count' => count($items)];
+            $result = ['connectivity' => ['ok' => true, 'format' => ($input['source_format'] === 'xml' ? 'non-empty XML items' : 'non-empty JSON array')], 'item_count' => count($items)];
             try {
                 $result['inspection'] = (new \ProductImport\Service\FieldInspector())->inspect($this->sampleItem($input, $items));
             } catch (Throwable $error) {
@@ -324,14 +324,14 @@ class AdminPiSourceController extends ModuleAdminController
             $rawSize = $_POST['sample_size'] ?? null;
             $size = is_string($rawSize) && ctype_digit($rawSize) && (int) $rawSize > 0 ? min(500, (int) $rawSize) : 50;
             $input = [];
-            foreach (['json_url', 'json_file_path'] as $key) {
+            foreach (['json_url', 'json_file_path', 'source_format', 'xml_item_path'] as $key) {
                 $value = $_POST[$key] ?? null;
                 if ($value !== null && !is_string($value)) {
                     throw new InvalidArgumentException($key . ' must be a string.');
                 }
                 $input[$key] = $value;
             }
-            $items = (new \ProductImport\Service\JsonFetcher())->fetch($input['json_url'], $input['json_file_path']);
+            $items = \ProductImport\Service\FeedFetcher::fetch($input);
             $result = (new \ProductImport\Service\ValueSampler())->sample(array_slice($items, 0, $size), $expression);
         } catch (Throwable $error) {
             $result = ['error' => $error->getMessage()];
@@ -565,10 +565,11 @@ class AdminPiSourceController extends ModuleAdminController
             return '';
         }
         $source += [
-            'name' => '', 'technical_key' => '', 'json_url' => '', 'json_file_path' => '',
+            'name' => '', 'technical_key' => '', 'json_url' => '', 'json_file_path' => '', 'source_format' => 'json', 'xml_item_path' => '',
             'identifier_field' => '', 'filter_expression' => '', 'field_mapping' => '{}', 'active' => 1,
             'variant_mapping' => null, 'root_category_id' => null, 'id_supplier' => null, 'id_lang_default' => 1, 'deactivate_missing' => 0,
         ];
+        $source['source_format'] = in_array($source['source_format'], ['json', 'xml'], true) ? $source['source_format'] : 'json';
         $mapping = json_decode($source['field_mapping'], true);
         $rows = $this->submittedMapping;
         if ($rows === null) {
@@ -631,6 +632,13 @@ class AdminPiSourceController extends ModuleAdminController
                 'desc' => '',
             ];
         }
+        array_splice($inputs, 4, 0, [[
+            'type' => 'select', 'name' => 'source_format', 'id' => 'source_format', 'label' => $this->trans('Format'),
+            'options' => ['query' => [['value' => 'json', 'label' => 'JSON'], ['value' => 'xml', 'label' => 'XML']], 'id' => 'value', 'name' => 'label'],
+        ], [
+            'type' => 'text', 'name' => 'xml_item_path', 'id' => 'xml_item_path', 'label' => $this->trans('XML item path'),
+            'desc' => $this->trans('Only for XML sources: the path from the XML root to each repeating product element, e.g. products/product.'),
+        ]]);
         $inputs[] = ['type' => 'textarea', 'label' => $this->trans('Filter expression'), 'name' => 'filter_expression', 'desc' => $filterHelp];
         $inputs[] = ['type' => 'html', 'name' => 'mapping_rows', 'html_content' => $mappingHtml];
         $tree = new HelperTreeCategories('pi-root-category-tree', $this->trans('Root category'));
@@ -683,12 +691,20 @@ class AdminPiSourceController extends ModuleAdminController
     private function readSubmission(): array
     {
         $data = [];
-        foreach (['name', 'technical_key', 'json_url', 'json_file_path', 'identifier_field', 'filter_expression'] as $field) {
+        foreach (['name', 'technical_key', 'json_url', 'json_file_path', 'identifier_field', 'filter_expression', 'xml_item_path'] as $field) {
             $value = Tools::getValue($field, '');
             if (!is_string($value)) {
                 throw new InvalidArgumentException('Invalid value for ' . $field . '.');
             }
             $data[$field] = trim($value);
+        }
+        $format = Tools::getValue('source_format', 'json');
+        $data['source_format'] = in_array($format, ['json', 'xml'], true) ? $format : 'json';
+        if ($data['source_format'] === 'xml' && $data['xml_item_path'] === '') {
+            throw new InvalidArgumentException('XML item path is required for XML sources.');
+        }
+        if ($data['source_format'] === 'json') {
+            $data['xml_item_path'] = null;
         }
         foreach (['active', 'deactivate_missing'] as $field) {
             $data[$field] = (int) (Tools::getValue($field) === '1');

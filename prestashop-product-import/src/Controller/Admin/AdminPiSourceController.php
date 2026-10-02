@@ -24,7 +24,7 @@ class AdminPiSourceController extends ModuleAdminController
 
     public function postProcess()
     {
-        $actions = ['runImport' => 'ajaxProcessRunImport', 'importStatus' => 'ajaxProcessImportStatus', 'testSource' => 'ajaxProcessTestSource', 'preview' => 'ajaxProcessPreview', 'inspect' => 'ajaxProcessInspect', 'discoverCategories' => 'ajaxProcessDiscoverCategories', 'mappings' => 'ajaxProcessMappings', 'saveMapping' => 'ajaxProcessSaveMapping', 'saveDefault' => 'ajaxProcessSaveDefault'];
+        $actions = ['runImport' => 'ajaxProcessRunImport', 'importStatus' => 'ajaxProcessImportStatus', 'testSource' => 'ajaxProcessTestSource', 'sampleValues' => 'ajaxProcessSampleValues', 'preview' => 'ajaxProcessPreview', 'inspect' => 'ajaxProcessInspect', 'discoverCategories' => 'ajaxProcessDiscoverCategories', 'mappings' => 'ajaxProcessMappings', 'saveMapping' => 'ajaxProcessSaveMapping', 'saveDefault' => 'ajaxProcessSaveDefault'];
         $action = Tools::getValue('action');
         if ($this->ajax && is_string($action) && isset($actions[$action])) {
             $this->{$actions[$action]}();
@@ -296,6 +296,42 @@ class AdminPiSourceController extends ModuleAdminController
                     $result[$section] = ['error' => $error->getMessage()];
                 }
             }
+        } catch (Throwable $error) {
+            $result = ['error' => $error->getMessage()];
+        }
+        $this->sendJson($result);
+    }
+
+    public function ajaxProcessSampleValues()
+    {
+        try {
+            $rawId = $_POST['id_source'] ?? '';
+            if (!is_string($rawId) || ($rawId !== '' && (!ctype_digit($rawId) || (int) $rawId <= 0))) {
+                throw new InvalidArgumentException('id_source must be a positive integer when provided.');
+            }
+            $idSource = $rawId === '' ? null : (int) $rawId;
+            if (!$this->checkToken() || !$this->access($idSource === null ? 'add' : 'edit')) {
+                throw new RuntimeException('Permission denied or invalid security token.');
+            }
+            if ($idSource !== null && !$this->sources->find($idSource)) {
+                throw new InvalidArgumentException('Source not found.');
+            }
+            $expression = $_POST['expression'] ?? null;
+            if (!is_string($expression) || trim($expression) === '') {
+                throw new InvalidArgumentException('Map a source field first.');
+            }
+            $rawSize = $_POST['sample_size'] ?? null;
+            $size = is_string($rawSize) && ctype_digit($rawSize) && (int) $rawSize > 0 ? min(500, (int) $rawSize) : 50;
+            $input = [];
+            foreach (['json_url', 'json_file_path'] as $key) {
+                $value = $_POST[$key] ?? null;
+                if ($value !== null && !is_string($value)) {
+                    throw new InvalidArgumentException($key . ' must be a string.');
+                }
+                $input[$key] = $value;
+            }
+            $items = (new \ProductImport\Service\JsonFetcher())->fetch($input['json_url'], $input['json_file_path']);
+            $result = (new \ProductImport\Service\ValueSampler())->sample(array_slice($items, 0, $size), $expression);
         } catch (Throwable $error) {
             $result = ['error' => $error->getMessage()];
         }

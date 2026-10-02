@@ -186,6 +186,100 @@
       form.addEventListener('submit', sync);
     });
 
+    function addSampler(row) {
+      var textarea = row.querySelector('textarea');
+      var controls = document.createElement('div');
+      controls.className = 'pi-sample-controls';
+      var label = document.createElement('label');
+      label.textContent = 'Sample size ';
+      var size = document.createElement('input');
+      size.type = 'number';
+      size.className = 'pi-sample-size';
+      size.min = '1';
+      size.max = '500';
+      size.value = '50';
+      label.appendChild(size);
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn btn-default pi-sample-values';
+      button.textContent = 'Sample values';
+      controls.appendChild(label);
+      controls.appendChild(button);
+      var output = document.createElement('div');
+      output.className = 'pi-sample-results';
+      output.style.display = 'none';
+      controls.appendChild(output);
+      (row.querySelector('td:nth-child(2)') || row).appendChild(controls);
+      button.addEventListener('click', function () {
+        output.replaceChildren();
+        output.style.display = '';
+        if (!textarea.value.trim()) {
+          output.textContent = 'Map a source field first';
+          return;
+        }
+        button.disabled = true;
+        button.textContent = 'Sampling…';
+        var body = new URLSearchParams();
+        body.set('ajax', '1');
+        body.set('action', 'sampleValues');
+        if (Number(panel.dataset.source) > 0) body.set('id_source', panel.dataset.source);
+        body.set('json_url', form.querySelector('[name="json_url"]').value);
+        body.set('json_file_path', form.querySelector('[name="json_file_path"]').value);
+        body.set('expression', textarea.value);
+        body.set('sample_size', size.value);
+        fetch(panel.dataset.url, {method: 'POST', credentials: 'same-origin', body: body})
+          .then(function (response) { return response.json(); })
+          .then(function (data) {
+            if (data.error) {
+              output.textContent = data.error;
+              return;
+            }
+            var status = document.createElement('p');
+            status.textContent = data.items_scanned + ' items scanned, ' + data.distinct_total + ' distinct values' +
+              (data.truncated ? ' (showing first 50)' : '') + ', ' + data.errors.count + ' errors';
+            output.appendChild(status);
+            var table = document.createElement('table');
+            table.className = 'table table-condensed';
+            var header = table.insertRow();
+            var valueHeading = document.createElement('th');
+            valueHeading.textContent = 'Value';
+            header.appendChild(valueHeading);
+            var countHeading = document.createElement('th');
+            countHeading.textContent = 'Count';
+            header.appendChild(countHeading);
+            data.values.forEach(function (entry) {
+              var resultRow = table.insertRow();
+              resultRow.insertCell().textContent = entry.value;
+              resultRow.insertCell().textContent = entry.count;
+            });
+            output.appendChild(table);
+            if (data.errors.messages.length) {
+              var details = document.createElement('details');
+              var summary = document.createElement('summary');
+              summary.textContent = 'Errors';
+              details.appendChild(summary);
+              data.errors.messages.forEach(function (message) {
+                var line = document.createElement('div');
+                line.textContent = message;
+                details.appendChild(line);
+              });
+              output.appendChild(details);
+            }
+          })
+          .catch(function (error) { output.textContent = 'Sampling failed: ' + error.message; })
+          .then(function () { button.disabled = false; button.textContent = 'Sample values'; });
+      });
+    }
+    fixed.forEach(addSampler);
+    var customEditor = document.querySelector('#pi-products .pi-mapping-editor');
+    Array.from(customEditor.querySelectorAll('tbody tr')).forEach(addSampler);
+    customEditor.querySelector('.pi-add-row').addEventListener('click', function () {
+      var row = customEditor.querySelector('tbody tr:last-child');
+      var clonedControls = row.querySelector('.pi-sample-controls');
+      if (clonedControls) clonedControls.remove();
+      addSampler(row);
+    });
+
     variantsList.addEventListener('change', function () {
       variantsList.dataset.touched = '1';
       if (variantsList.value !== '__custom__') variantsExpression.value = variantsList.value;

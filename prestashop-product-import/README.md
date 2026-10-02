@@ -240,6 +240,8 @@ MySQL 8.0 does **not** support `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` (see h
 
 Test source discovers JSON fields and list candidates. The Product fields tab shows thirteen canonical rows with one source selector each. Choose a discovered field, leave a row unmapped, or choose Custom expression for formulas and the cursor insert control. Saved formulas remain editable and are matched to discovered fields when inspection completes. Custom target fields remain available below the fixed rows.
 
+Each Product fields row also has **Sample values**. Choose a sample size and run it to see the distinct values and counts produced by the row's current expression from the current feed, even before saving. This is a general aid for writing expressions for any field.
+
 The same tab contains optional variants. Select a discovered list of objects or enter a custom list expression, then map variant fields and named attributes from variant item keys, product fields, or custom expressions. At least one attribute and a reference field are required when variants are enabled. The existing `field_mapping_*`, `variant_attribute_*`, `variant_field_*`, and `variants_expression` submission names remain in use. Test configuration evaluates the saved source.
 
 

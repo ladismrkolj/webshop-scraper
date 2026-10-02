@@ -12,7 +12,7 @@ class ProductImport extends Module
     {
         $this->name = 'productimport';
         $this->tab = 'administration';
-        $this->version = '0.10.0';
+        $this->version = '0.11.0';
         $this->author = 'Product Import';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -39,6 +39,7 @@ class ProductImport extends Module
             `variant_mapping` LONGTEXT NULL,
             `active` TINYINT(1) NOT NULL DEFAULT 1,
             `root_category_id` INT UNSIGNED NULL,
+            `id_supplier` INT UNSIGNED NULL,
             `default_id_category` INT UNSIGNED NULL,
             `default_id_manufacturer` INT UNSIGNED NULL,
             `id_lang_default` INT UNSIGNED NOT NULL DEFAULT 1,

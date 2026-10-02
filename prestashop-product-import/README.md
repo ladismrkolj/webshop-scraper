@@ -262,3 +262,9 @@ The CLI also accepts a source ID, including an inactive source. The admin Run im
 ## Remove existing duplicate images
 
 Run `php bin/dedupe-images.php all` or `php bin/dedupe-images.php <id_source>` from the module directory to preview duplicates on products linked by this module. The default is a dry run showing each product and duplicate IDs. Add `--apply` to delete duplicates, keeping the lowest image ID in each fingerprint group. PrestaShop handles image files, thumbnails and cover changes. Ordinary combination image associations on removed duplicates are re-established on the next import because attachment returns the kept image ID.
+
+## Supplier and price fields (0.11.0)
+
+Upgrade to 0.11.0 before saving sources. The General tab's **Supplier** dropdown tags every imported product from that source with one supplier. Create suppliers under Catalog > Brands & Suppliers. Clearing the dropdown leaves existing product suppliers untouched.
+
+The Product fields tab adds optional `wholesale_price` (your cost price, separate from the retail price customers pay and not shown to customers) and `regular_price`. When both `regular_price` and `price` are mapped and the regular price is higher, the product's base price becomes `regular_price` and an always-on, all-customer specific price overrides it with `price`. A regular price alone becomes the base price. Otherwise the module removes that discount slot. This applies to base products only; combination pricing is unchanged. If you manually create your own always-on discount on an imported product outside this module, the next import may overwrite it.

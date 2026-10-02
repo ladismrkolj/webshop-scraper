@@ -80,13 +80,14 @@ class ImportRunnerTest extends TestCase
             public function __construct()
             {
             }
-            public function import(int $source, string $external, array $values, array $categories, ?int $manufacturer, int $language): int
+            public function import(int $source, string $external, array $values, array $categories, ?int $manufacturer, ?int $supplier, int $language): int
             {
                 if ($external === 'broken') {
                     throw new \RuntimeException('save failed');
                 }
                 TestCase::assertSame([3], $categories);
                 TestCase::assertSame(4, $manufacturer);
+                TestCase::assertNull($supplier);
                 return $external === 'old' ? 10 : 12;
             }
         };

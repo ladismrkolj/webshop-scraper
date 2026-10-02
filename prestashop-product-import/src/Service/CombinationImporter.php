@@ -66,7 +66,7 @@ class CombinationImporter
         } elseif (isset($mappedFields['quantity'])) {
             \StockAvailable::setQuantity($idProduct, (int) $combination->id, (int) $mappedFields['quantity']);
         }
-        $product->updateDefaultAttribute();
+        $product->updateDefaultAttribute($idProduct);
         if (is_string($mappedFields['image'] ?? null) && trim($mappedFields['image']) !== '') {
             $idImage = null;
             try {

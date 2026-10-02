@@ -19,6 +19,7 @@ class ProductImporter
         array $mappedValues,
         array $categoryIds,
         ?int $idManufacturer,
+        ?int $idSupplier,
         int $idLangDefault
     ): int {
         if ($externalId === '' || \Tools::strlen($externalId) > 191) {
@@ -60,6 +61,14 @@ class ProductImporter
         if (isset($mappedValues['price'])) {
             $product->price = (float) $mappedValues['price'];
         }
+        if (isset($mappedValues['wholesale_price'])) {
+            $product->wholesale_price = (float) $mappedValues['wholesale_price'];
+        }
+        $regularPrice = isset($mappedValues['regular_price']) ? (float) $mappedValues['regular_price'] : null;
+        $currentPrice = isset($mappedValues['price']) ? (float) $mappedValues['price'] : null;
+        if ($regularPrice !== null && ($currentPrice === null || $regularPrice > $currentPrice)) {
+            $product->price = $regularPrice;
+        }
         if (isset($mappedValues['weight'])) {
             $product->weight = (float) $mappedValues['weight'];
         } elseif ($isNew) {
@@ -72,6 +81,9 @@ class ProductImporter
         }
         if ($idManufacturer !== null) {
             $product->id_manufacturer = $idManufacturer;
+        }
+        if ($idSupplier !== null) {
+            $product->id_supplier = $idSupplier;
         }
         $categoryIds = array_values(array_unique(array_map('intval', $categoryIds)));
         if ($categoryIds !== []) {
@@ -90,6 +102,11 @@ class ProductImporter
         }
         if (isset($mappedValues['quantity'])) {
             \StockAvailable::setQuantity((int) $product->id, 0, (int) $mappedValues['quantity']);
+        }
+        try {
+            (new ProductDiscountSetter())->apply((int) $product->id, $regularPrice, $currentPrice);
+        } catch (\Throwable $error) {
+            \PrestaShopLogger::addLog('Product import discount skipped: ' . $error->getMessage(), 2, null, 'Product', (int) $product->id);
         }
         $this->importImages($product, $mappedValues);
         $this->products->link($idSource, $externalId, (int) $product->id);

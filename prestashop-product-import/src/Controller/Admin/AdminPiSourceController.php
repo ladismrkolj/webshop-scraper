@@ -567,7 +567,7 @@ class AdminPiSourceController extends ModuleAdminController
         $source += [
             'name' => '', 'technical_key' => '', 'json_url' => '', 'json_file_path' => '',
             'identifier_field' => '', 'filter_expression' => '', 'field_mapping' => '{}', 'active' => 1,
-            'variant_mapping' => null, 'root_category_id' => null, 'id_lang_default' => 1, 'deactivate_missing' => 0,
+            'variant_mapping' => null, 'root_category_id' => null, 'id_supplier' => null, 'id_lang_default' => 1, 'deactivate_missing' => 0,
         ];
         $mapping = json_decode($source['field_mapping'], true);
         $rows = $this->submittedMapping;
@@ -577,7 +577,7 @@ class AdminPiSourceController extends ModuleAdminController
                 $rows[] = ['target' => $target, 'expression' => $expression];
             }
         }
-        $canonical = ['name', 'reference', 'price', 'short_description', 'description', 'ean13', 'weight', 'quantity', 'active', 'manufacturer', 'category_paths', 'images', 'main_image'];
+        $canonical = ['name', 'reference', 'price', 'regular_price', 'wholesale_price', 'short_description', 'description', 'ean13', 'weight', 'quantity', 'active', 'manufacturer', 'category_paths', 'images', 'main_image'];
         $fixed = [];
         foreach ($canonical as $target) {
             $fixed[$target] = ['target' => $target, 'expression' => '', 'badge' => $target === 'name' ? 'Required for new products' : (in_array($target, ['reference', 'price', 'category_paths', 'images'], true) ? 'Recommended' : 'Optional')];
@@ -648,6 +648,11 @@ class AdminPiSourceController extends ModuleAdminController
             'type' => 'select', 'name' => 'id_lang_default', 'label' => $this->trans('Source language'),
             'options' => ['query' => Language::getLanguages(false), 'id' => 'id_lang', 'name' => 'name'],
         ];
+        $inputs[] = [
+            'type' => 'select', 'name' => 'id_supplier', 'label' => $this->trans('Supplier'),
+            'options' => ['query' => array_merge([['id_supplier' => '', 'label' => '— none —']], (new \ProductImport\Service\CatalogOptions())->suppliers()), 'id' => 'id_supplier', 'name' => 'label'],
+            'desc' => $this->trans('Tags every product this source imports with this supplier, so you can tell at a glance which source it came from. Create suppliers under Catalog > Brands & Suppliers.'),
+        ];
         foreach (['active' => 'Active', 'deactivate_missing' => 'Deactivate missing products'] as $field => $label) {
             $inputs[] = [
                 'type' => 'switch', 'name' => $field, 'label' => $this->trans($label), 'is_bool' => true,
@@ -689,6 +694,7 @@ class AdminPiSourceController extends ModuleAdminController
             $data[$field] = (int) (Tools::getValue($field) === '1');
         }
         $root = Tools::getValue('root_category_id', '');
+        $supplier = Tools::getValue('id_supplier', '');
         $language = Tools::getValue('id_lang_default', '1');
         if (!is_string($root) || ($root !== '' && (!ctype_digit($root) || (int) $root <= 0))) {
             throw new InvalidArgumentException('Invalid root category ID.');
@@ -696,7 +702,11 @@ class AdminPiSourceController extends ModuleAdminController
         if (!is_string($language) || !ctype_digit($language) || (int) $language <= 0) {
             throw new InvalidArgumentException('Invalid source language ID.');
         }
+        if (!is_string($supplier) || ($supplier !== '' && (!ctype_digit($supplier) || (int) $supplier <= 0))) {
+            throw new InvalidArgumentException('Invalid supplier ID.');
+        }
         $data['root_category_id'] = $root === '' ? null : (int) $root;
+        $data['id_supplier'] = $supplier === '' ? null : (int) $supplier;
         $data['id_lang_default'] = (int) $language;
         $this->submittedSource = $data;
         $variantExpression = Tools::getValue('variants_expression', '');

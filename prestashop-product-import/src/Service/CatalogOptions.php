@@ -28,4 +28,14 @@ class CatalogOptions
             return ['id_manufacturer' => (int) $row['id_manufacturer'], 'label' => $row['name']];
         }, $rows);
     }
+    public function suppliers(): array
+    {
+        $rows = \Db::getInstance()->executeS('SELECT `id_supplier`, `name` FROM `' . _DB_PREFIX_ . 'supplier` ORDER BY `name`');
+        if ($rows === false) {
+            throw new \RuntimeException('Unable to list suppliers.');
+        }
+        return array_map(static function (array $row): array {
+            return ['id_supplier' => (int) $row['id_supplier'], 'label' => $row['name']];
+        }, $rows);
+    }
 }

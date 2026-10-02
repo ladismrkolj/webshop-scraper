@@ -41,7 +41,7 @@ class SourceRepository
                 throw new \InvalidArgumentException('Missing source property: ' . $required);
             }
         }
-        $data += ['active' => 1, 'root_category_id' => null, 'id_lang_default' => 1, 'deactivate_missing' => 0];
+        $data += ['active' => 1, 'root_category_id' => null, 'id_supplier' => null, 'id_lang_default' => 1, 'deactivate_missing' => 0];
         $assignments = $this->assignments($data);
         $now = pSQL(date('Y-m-d H:i:s'));
         $assignments[] = "`date_add` = '" . $now . "'";
@@ -94,6 +94,9 @@ class SourceRepository
             if (array_key_exists($column, $data)) {
                 $assignments[] = '`' . $column . '` = ' . ($data[$column] === null ? 'NULL' : (int) $data[$column]);
             }
+        }
+        if (array_key_exists('id_supplier', $data)) {
+            $assignments[] = '`id_supplier` = ' . ($data['id_supplier'] === null ? 'NULL' : (int) $data['id_supplier']);
         }
         if (array_key_exists('root_category_id', $data)) {
             $assignments[] = '`root_category_id` = ' . ($data['root_category_id'] === null ? 'NULL' : (int) $data['root_category_id']);

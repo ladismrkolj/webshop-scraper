@@ -37,7 +37,12 @@ class ProductImporter
         foreach (['name' => 'name', 'description' => 'description', 'short_description' => 'description_short'] as $target => $property) {
             if (isset($mappedValues[$target])) {
                 $translations = is_array($product->$property) ? $product->$property : [];
-                $translations[$idLangDefault] = (string) $mappedValues[$target];
+                $value = (string) $mappedValues[$target];
+                if ($property === 'description_short') {
+                    $limit = (int) \Configuration::get('PS_PRODUCT_SHORT_DESC_LIMIT');
+                    $value = ShortDescriptionLimiter::limit($value, $limit > 0 ? $limit : 800);
+                }
+                $translations[$idLangDefault] = $value;
                 $product->$property = $translations;
             }
         }

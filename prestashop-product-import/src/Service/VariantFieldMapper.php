@@ -31,10 +31,13 @@ class VariantFieldMapper
         return $this->evaluateMapping($fieldMapping, ['fields' => $item, 'variant' => $variant]);
     }
 
-    /** Evaluate once per product; invalid lists surface rather than silently skipping variants. */
+    /** Evaluate once per product; null means no variants, while malformed lists surface. */
     public function variants(array $item, string $expression): array
     {
         $variants = $this->evaluator->evaluate($expression, ['fields' => $item]);
+        if ($variants === null) {
+            return [];
+        }
         if (!is_array($variants) || ($variants !== [] && array_keys($variants) !== range(0, count($variants) - 1))) {
             throw new ExpressionEvaluationException($expression, new \UnexpectedValueException('Variants must be a list.'));
         }

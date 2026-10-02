@@ -24,8 +24,8 @@ class ProductDiscountSetter
                 throw new \RuntimeException('Unable to load product discount.');
             }
             if ($hasDiscount && $index === 0) {
-                $discount->price = $currentPrice;
-                $discount->reduction = 0;
+                $discount->price = -1;
+                $discount->reduction = $regularPrice - $currentPrice;
                 $discount->reduction_tax = 0;
                 $discount->reduction_type = 'amount';
                 if (!$discount->update()) {
@@ -51,8 +51,8 @@ class ProductDiscountSetter
         $discount->from_quantity = 1;
         $discount->from = $date;
         $discount->to = $date;
-        $discount->price = $currentPrice;
-        $discount->reduction = 0;
+        $discount->price = -1;
+        $discount->reduction = $regularPrice - $currentPrice;
         $discount->reduction_tax = 0;
         $discount->reduction_type = 'amount';
         if (!$discount->add()) {

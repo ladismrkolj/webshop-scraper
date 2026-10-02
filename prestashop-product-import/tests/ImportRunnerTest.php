@@ -198,6 +198,16 @@ class ImportRunnerTest extends TestCase
         self::assertSame([[10, 50]], $state->zeroed);
     }
 
+    public function testProductsWithoutVariantsDoNotFail(): void
+    {
+        [$runner, $state] = $this->fixture([['id' => 'old', 'variants' => null], ['id' => 'new']]);
+        $result = $runner->runOne($this->source(['variant_mapping' => ['variants_expression' => 'path(fields, "variants")', 'attributes' => [], 'fields' => []]]), 'admin-manual');
+        self::assertSame(['created' => 1, 'updated' => 1, 'skipped' => 0, 'failed' => 0], $result['counts']);
+        self::assertSame('completed', $result['status']);
+        self::assertSame('', $result['error_log']);
+        self::assertSame([], $state->prices);
+    }
+
     public function testBrokenFilterIsIsolatedPerItem(): void
     {
         [$runner, $state] = $this->fixture([['id' => 'old'], ['id' => 'new']]);

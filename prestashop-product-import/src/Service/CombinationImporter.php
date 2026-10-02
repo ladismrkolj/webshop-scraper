@@ -49,7 +49,7 @@ class CombinationImporter
         }
         if (isset($mappedFields['price'])) {
             // product_attribute.price is the impact, using the same tax basis as the base price.
-            $combination->price = (float) $mappedFields['price'] - $baseProductPrice;
+            $combination->price = round((float) $mappedFields['price'] - $baseProductPrice, 6);
         }
         $defaultId = (int) \Db::getInstance()->getValue(
             'SELECT `id_product_attribute` FROM `' . _DB_PREFIX_ . 'product_attribute_shop` WHERE `id_product` = ' . (int) $idProduct

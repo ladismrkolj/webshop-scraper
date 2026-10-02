@@ -75,6 +75,13 @@ class VariantFieldMapperTest extends TestCase
         self::assertSame([], $mapper->variants([], '[]'));
     }
 
+    public function testNullVariantsMeansNoVariants(): void
+    {
+        $mapper = new VariantFieldMapper(new ExpressionEvaluator());
+        self::assertSame([], $mapper->variants(['variants' => null], 'fields["variants"]'));
+        self::assertSame([], $mapper->variants([], 'path(fields, "variants")'));
+    }
+
     #[DataProvider('invalidVariants')]
     public function testInvalidVariantListsSurface($variants): void
     {
@@ -84,7 +91,7 @@ class VariantFieldMapperTest extends TestCase
 
     public static function invalidVariants(): array
     {
-        return [[null], ['bad'], [false], [['size' => 'M']], [[1 => ['size' => 'M']]], [['M']], [[null]]];
+        return [['bad'], [false], [['size' => 'M']], [[1 => ['size' => 'M']]], [['M']], [[null]]];
     }
 
     public function testBrokenVariantsExpressionSurfaces(): void

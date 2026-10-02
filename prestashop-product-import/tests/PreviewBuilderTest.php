@@ -104,7 +104,7 @@ class PreviewBuilderTest extends TestCase
 
     public function testBrokenVariantsListSurfaces(): void
     {
-        $result = $this->build(['variant_mapping' => ['variants_expression' => 'null']]);
+        $result = $this->build(['variant_mapping' => ['variants_expression' => '"bad"']]);
         self::assertArrayHasKey('variants', $result['errors']);
         self::assertSame([], $result['variants']['items']);
     }

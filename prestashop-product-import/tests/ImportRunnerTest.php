@@ -187,7 +187,17 @@ class ImportRunnerTest extends TestCase
         self::assertSame('failed', $state->finished[0]['status']);
     }
 
-    public function testVariantsUseSavedPriceAndContinueAfterFailure(): void
+    public function testVariantsUseMappedPrice(): void
+    {
+        [$runner, $state] = $this->fixture([['id' => 'old', 'price' => 2826.53, 'variants' => [['sku' => 'good']]]]);
+        $source = $this->source(['variant_mapping' => ['variants_expression' => 'fields["variants"]', 'attributes' => [['name' => 'Size', 'expression' => '"M"']], 'fields' => ['reference' => 'variant["sku"]']]]);
+        $source['field_mapping']['price'] = 'fields["price"]';
+        $result = $runner->runOne($source, 'admin-manual');
+        self::assertSame('completed', $result['status']);
+        self::assertSame([2826.53], $state->prices);
+    }
+
+    public function testVariantsUseSavedPriceWhenPriceIsNotMappedAndContinueAfterFailure(): void
     {
         [$runner, $state] = $this->fixture([['id' => 'old', 'variants' => [['sku' => 'bad'], ['sku' => 'good']]]]);
         $result = $runner->runOne($this->source(['deactivate_missing' => true, 'variant_mapping' => ['variants_expression' => 'fields["variants"]', 'attributes' => [['name' => 'Size', 'expression' => '"M"']], 'fields' => ['reference' => 'variant["sku"]']]]), 'admin-manual');

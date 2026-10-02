@@ -68,7 +68,7 @@ class ImportRunner
                     continue;
                 }
                 $variants = $this->variants->variants($item, $configuration['variants_expression']);
-                $basePrice = $this->catalog->savedPrice($idProduct);
+                $basePrice = isset($values['price']) ? (float) $values['price'] : $this->catalog->savedPrice($idProduct);
                 foreach ($variants as $variantIndex => $variant) {
                     try {
                         $fields = $this->variants->mapFields($item, $variant, $configuration['fields']);

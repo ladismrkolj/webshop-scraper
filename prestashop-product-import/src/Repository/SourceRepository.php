@@ -63,6 +63,13 @@ class SourceRepository
         );
     }
 
+    public function setConsecutiveEmptyCount(int $idSource, int $count): void
+    {
+        \Db::getInstance()->execute(
+            'UPDATE `' . _DB_PREFIX_ . 'pi_source` SET `consecutive_empty_count` = ' . (int) $count . ' WHERE `id_source` = ' . (int) $idSource
+        );
+    }
+
     public function delete(int $idSource): bool
     {
         return (bool) \Db::getInstance()->execute('DELETE FROM `' . _DB_PREFIX_ . 'pi_source` WHERE `id_source` = ' . (int) $idSource);

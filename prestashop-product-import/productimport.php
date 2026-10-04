@@ -12,7 +12,7 @@ class ProductImport extends Module
     {
         $this->name = 'productimport';
         $this->tab = 'administration';
-        $this->version = '0.12.0';
+        $this->version = '0.13.0';
         $this->author = 'Product Import';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -46,6 +46,7 @@ class ProductImport extends Module
             `default_id_manufacturer` INT UNSIGNED NULL,
             `id_lang_default` INT UNSIGNED NOT NULL DEFAULT 1,
             `deactivate_missing` TINYINT(1) NOT NULL DEFAULT 0,
+            `consecutive_empty_count` INT UNSIGNED NOT NULL DEFAULT 0,
             `date_add` DATETIME NOT NULL,
             `date_upd` DATETIME NOT NULL,
             PRIMARY KEY (`id_source`),

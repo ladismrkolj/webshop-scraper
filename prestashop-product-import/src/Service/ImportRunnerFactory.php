@@ -6,6 +6,7 @@ use ProductImport\Repository\CategoryMappingRepository;
 use ProductImport\Repository\ExternalProductRepository;
 use ProductImport\Repository\ExternalCombinationRepository;
 use ProductImport\Repository\ImportRunRepository;
+use ProductImport\Repository\SourceRepository;
 
 class ImportRunnerFactory
 {
@@ -28,6 +29,7 @@ class ImportRunnerFactory
             new CombinationImporter($combinations),
             $products,
             $combinations,
+            new SourceRepository(),
             new ImportRunRepository(),
             new ImportCatalog(),
             new XmlFetcher()

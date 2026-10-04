@@ -6,6 +6,7 @@ use PHPUnit\Framework\TestCase;
 use ProductImport\Repository\ExternalProductRepository;
 use ProductImport\Repository\ExternalCombinationRepository;
 use ProductImport\Repository\ImportRunRepository;
+use ProductImport\Repository\SourceRepository;
 use ProductImport\Service\{JsonFetcher, ProductFilter, ProductFieldMapper, CategoryPathNormalizer, CategoryResolver, ManufacturerResolver, ProductImporter, VariantFieldMapper, AttributeResolver, CombinationImporter, ImportCatalog, ImportRunner, ExpressionEvaluator};
 
 class ImportRunnerTest extends TestCase
@@ -14,7 +15,7 @@ class ImportRunnerTest extends TestCase
     {
         $state = (object) ['products' => ['old' => ['id_product' => 10, 'id_run_last_seen' => null], 'stale' => ['id_product' => 11, 'id_run_last_seen' => 1]],
             'combinations' => ['old:stale' => ['id_product' => 10, 'id_product_attribute' => 50, 'id_run_last_seen' => null]],
-            'triggers' => [], 'deactivated' => [], 'zeroed' => [], 'finished' => [], 'prices' => [], 'staleCalls' => 0];
+            'triggers' => [], 'deactivated' => [], 'zeroed' => [], 'finished' => [], 'prices' => [], 'staleCalls' => 0, 'emptyStreakUpdates' => []];
         $fetcher = new class ($items, $fetchFails) extends JsonFetcher {
             public function __construct(private array $items, private bool $fails)
             {
@@ -74,6 +75,15 @@ class ImportRunnerTest extends TestCase
             public function finish(int $run, string $status, array $counts, string $log): void
             {
                 $this->state->finished[] = compact('run', 'status', 'counts', 'log');
+            }
+        };
+        $sources = new class ($state) extends SourceRepository {
+            public function __construct(private object $state)
+            {
+            }
+            public function setConsecutiveEmptyCount(int $idSource, int $count): void
+            {
+                $this->state->emptyStreakUpdates[] = [$idSource, $count];
             }
         };
         $products = new class () extends ProductImporter {
@@ -151,7 +161,7 @@ class ImportRunnerTest extends TestCase
             }
         };
         $evaluator = new ExpressionEvaluator();
-        $runner = new ImportRunner($fetcher, new ProductFilter($evaluator), new ProductFieldMapper($evaluator), new CategoryPathNormalizer(), $categories, $manufacturers, $products, new VariantFieldMapper($evaluator), $attributes, $combinations, $links, $combinationLinks, $runs, $catalog);
+        $runner = new ImportRunner($fetcher, new ProductFilter($evaluator), new ProductFieldMapper($evaluator), new CategoryPathNormalizer(), $categories, $manufacturers, $products, new VariantFieldMapper($evaluator), $attributes, $combinations, $links, $combinationLinks, $sources, $runs, $catalog);
         return [$runner, $state];
     }
 
@@ -185,6 +195,40 @@ class ImportRunnerTest extends TestCase
         self::assertSame(0, $state->staleCalls);
         self::assertSame([], $state->deactivated);
         self::assertSame('failed', $state->finished[0]['status']);
+    }
+
+    public function testEmptyFeedWithDeactivateMissingSkipsCleanupFirstTime(): void
+    {
+        [$runner, $state] = $this->fixture([]);
+        $result = $runner->runOne($this->source(['deactivate_missing' => true]), 'admin-manual');
+        self::assertSame('failed', $result['status']);
+        self::assertSame(['created' => 0, 'updated' => 0, 'skipped' => 0, 'failed' => 0], $result['counts']);
+        self::assertSame([], $state->deactivated);
+        self::assertSame([], $state->zeroed);
+        self::assertSame(0, $state->staleCalls);
+        self::assertStringContainsString('skipping deactivation', $result['error_log']);
+        self::assertSame([[1, 1]], $state->emptyStreakUpdates);
+        self::assertSame('failed', $state->finished[0]['status']);
+    }
+
+    public function testEmptyFeedSecondConsecutiveRunProceedsWithCleanup(): void
+    {
+        [$runner, $state] = $this->fixture([]);
+        $result = $runner->runOne($this->source(['deactivate_missing' => true, 'consecutive_empty_count' => 1]), 'admin-manual');
+        self::assertSame('completed', $result['status']);
+        self::assertSame([10, 11], $state->deactivated);
+        self::assertSame([[10, 50]], $state->zeroed);
+        self::assertSame(2, $state->staleCalls);
+        self::assertStringContainsString('proceeding with deactivation', $result['error_log']);
+        self::assertSame([[1, 2]], $state->emptyStreakUpdates);
+    }
+
+    public function testNonEmptyRunResetsEmptyStreak(): void
+    {
+        [$runner, $state] = $this->fixture([['id' => 'old']]);
+        $result = $runner->runOne($this->source(['deactivate_missing' => true, 'consecutive_empty_count' => 2]), 'admin-manual');
+        self::assertSame('completed', $result['status']);
+        self::assertSame([[1, 0]], $state->emptyStreakUpdates);
     }
 
     public function testVariantsUseMappedPrice(): void

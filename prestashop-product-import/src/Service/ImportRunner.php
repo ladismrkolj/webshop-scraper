@@ -5,6 +5,7 @@ namespace ProductImport\Service;
 use ProductImport\Repository\ExternalProductRepository;
 use ProductImport\Repository\ExternalCombinationRepository;
 use ProductImport\Repository\ImportRunRepository;
+use ProductImport\Repository\SourceRepository;
 
 class ImportRunner
 {
@@ -21,6 +22,7 @@ class ImportRunner
         private CombinationImporter $combinations,
         private ExternalProductRepository $productLinks,
         private ExternalCombinationRepository $combinationLinks,
+        private SourceRepository $sourceRepository,
         private ImportRunRepository $runs,
         private ImportCatalog $catalog,
         private ?XmlFetcher $xmlFetcher = null
@@ -40,6 +42,22 @@ class ImportRunner
             $log = ImportRunRepository::capLog($error->getMessage());
             $this->runs->finish($idRun, 'failed', $counts, $log);
             return ['id_source' => $idSource, 'id_run' => $idRun, 'status' => 'failed', 'triggered_by' => $triggeredBy, 'counts' => $counts, 'error_log' => $log];
+        }
+        $skipCleanup = false;
+        $forcedFailure = false;
+        if (!empty($source['deactivate_missing'])) {
+            $previousEmptyStreak = (int) ($source['consecutive_empty_count'] ?? 0);
+            if ($items === [] && $previousEmptyStreak === 0) {
+                $this->sourceRepository->setConsecutiveEmptyCount($idSource, 1);
+                $skipCleanup = true;
+                $forcedFailure = true;
+                $this->log($log, 'Feed returned 0 items; skipping deactivation as a likely transient scrape failure. Missing products will be deactivated if this repeats on the next run.');
+            } elseif ($items === [] && $previousEmptyStreak > 0) {
+                $this->sourceRepository->setConsecutiveEmptyCount($idSource, $previousEmptyStreak + 1);
+                $this->log($log, 'Feed returned 0 items for the ' . ($previousEmptyStreak + 1) . ' consecutive run in a row; proceeding with deactivation since this no longer looks transient.');
+            } elseif ($items !== [] && $previousEmptyStreak > 0) {
+                $this->sourceRepository->setConsecutiveEmptyCount($idSource, 0);
+            }
         }
         foreach ($items as $index => $item) {
             try {
@@ -102,7 +120,7 @@ class ImportRunner
                 $this->log($log, "item $index: " . $error->getMessage());
             }
         }
-        if (!empty($source['deactivate_missing'])) {
+        if (!$skipCleanup && !empty($source['deactivate_missing'])) {
             try {
                 foreach ($this->productLinks->findStaleForSource($idSource, $idRun) as $row) {
                     try {
@@ -125,7 +143,7 @@ class ImportRunner
                 $this->log($log, 'Stale lookup: ' . $error->getMessage());
             }
         }
-        $status = $counts['failed'] > 0 ? 'completed_with_errors' : 'completed';
+        $status = $forcedFailure ? 'failed' : ($counts['failed'] > 0 ? 'completed_with_errors' : 'completed');
         $this->runs->finish($idRun, $status, $counts, $log);
         return ['id_source' => $idSource, 'id_run' => $idRun, 'status' => $status, 'triggered_by' => $triggeredBy, 'counts' => $counts, 'error_log' => $log];
     }

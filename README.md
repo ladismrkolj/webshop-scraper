@@ -249,6 +249,102 @@ find ~/webshop-scraper/nightly/output -name '*.json' -mtime +90 -delete
 `--output DIR` writes elsewhere — a mounted share, say — without touching the
 repo. Both `nightly/output/` and `nightly/var/` are untracked.
 
+## Feeding PrestaShop: exposing output and the daily import
+
+The nightly run above already produces one JSON file per shop per night, but
+each is named with that run's timestamp
+(`recharge_si_2026-08-23_023005.json`), so there's nothing with a fixed name
+or address for PrestaShop's `prestashop-product-import` module to point at.
+Two things close that gap: a stable, served copy of each shop's latest file,
+and a cron entry that imports after the scrape finishes.
+
+### 1. Keep a stable "latest" copy per shop
+
+After `run_nightly.sh` finishes, copy each shop's newest timestamped file to a
+fixed name in its own directory — `ls -t` sorts a shop's files newest-first,
+since the timestamp is part of the filename:
+
+```bash
+mkdir -p /srv/scraper-latest
+for shop in easy_surfshop_com infinitysport_si kitenatura_com obsession_si recharge_si gong_galaxy_com; do
+    latest=$(ls -t "$HOME/webshop-scraper/nightly/output/${shop}"_*.json 2>/dev/null | head -1)
+    if [ -n "$latest" ]; then
+        # Write to a temp file and rename atomically, so nginx never serves a
+        # half-written file to a concurrent request from the other VPS.
+        tmp="/srv/scraper-latest/.${shop}.json.tmp"
+        cp "$latest" "$tmp" && mv "$tmp" "/srv/scraper-latest/${shop}.json"
+    fi
+done
+```
+
+Save this as `~/webshop-scraper/nightly/publish-latest.sh` (`chmod +x` it), and
+chain it onto the existing nightly crontab line so it only runs after a
+successful scrape:
+
+```bash
+crontab -e
+30 2 * * * cd /home/youruser/webshop-scraper/nightly && ./run_nightly.sh >> var/nightly-cron.log 2>&1 && ./publish-latest.sh >> var/nightly-cron.log 2>&1
+```
+
+### 2. Serve that directory over HTTP
+
+Install nginx and point it at `/srv/scraper-latest` as static files, on a port
+PrestaShop can reach:
+
+```bash
+sudo apt install -y nginx
+```
+
+```nginx
+# /etc/nginx/sites-available/scraper-latest
+server {
+    listen 8081;
+    root /srv/scraper-latest;
+    autoindex off;
+    location / {
+        try_files $uri =404;
+    }
+}
+```
+
+```bash
+sudo ln -s /etc/nginx/sites-available/scraper-latest /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Each shop's feed is then at `http://<lxc-ip>:8081/<shop>.json` — e.g.
+`http://192.168.1.50:8081/recharge_si.json`. Use that as the **JSON URL** on
+the matching source in the PrestaShop admin (Catalog > Product Import).
+Restrict port 8081 to your LAN/VPN in the Proxmox firewall or host firewall —
+there's no reason for it to be reachable from the public internet.
+
+If PrestaShop runs in another LXC on the **same** Proxmox host, you can skip
+nginx and bind-mount `/srv/scraper-latest` into that container instead,
+pointing a source's **JSON file path** at the mounted file — see Proxmox's
+`pct set <vmid> -mp0 /srv/scraper-latest,mp=/mnt/scraper-latest` for an
+unprivileged bind mount. HTTP is the more portable choice if that ever
+changes (different host, moved to a VPS, etc.), so it's the better default
+unless you specifically want to avoid running nginx.
+
+### 3. Trigger the PrestaShop import after the scrape
+
+The module already has a token-protected cron endpoint for exactly this (see
+`prestashop-product-import/README.md`'s "Background imports" section). Schedule
+it comfortably after step 1 finishes — the nightly run's own log
+(`var/nightly-cron.log`) shows how long a full night's crawl actually takes,
+so set the gap accordingly:
+
+```bash
+crontab -e
+30 3 * * * curl -fsS "https://your-prestashop-domain/module/productimport/cron?token=YOUR_CRON_TOKEN&background=1" >> /var/log/productimport-cron.log 2>&1
+```
+
+`&background=1` starts the import as a detached process and returns
+immediately, so a large catalog can't make this cron job hang. This line can
+live on either machine's crontab — it's just an HTTP request — so put it
+wherever is more convenient to monitor. Treat the token as a secret, same as
+the module's own docs say.
+
 ## Tests
 
 The fixtures under `fixtures/` are the regression suite. They replay saved

@@ -25,10 +25,15 @@ class ProductImportCronModuleFrontController extends ModuleFrontController
             die('{"error":"Forbidden"}');
         }
         try {
-            $sources = ImportLauncher::selectSources((new SourceRepository())->findAll(), 'all');
+            $rawSource = Tools::getValue('source');
+            $selection = ($rawSource === false || $rawSource === '') ? 'all' : (int) $rawSource;
+            if ($selection !== 'all' && $selection <= 0) {
+                throw new InvalidArgumentException('source must be a positive source ID.');
+            }
+            $sources = ImportLauncher::selectSources((new SourceRepository())->findAll(), $selection);
             if (Tools::getValue('background') === '1') {
                 try {
-                    (new BackgroundImport())->start('all', 'cron-background');
+                    (new BackgroundImport())->start($selection, 'cron-background');
                     http_response_code(202);
                     $json = '{"started":true}';
                 } catch (BackgroundImportUnsupportedException $error) {

@@ -113,6 +113,12 @@ Configure your server's scheduler (the module does not edit the server crontab),
 
 The source list Run import panel runs all active sources by default or one selected source, including an inactive one. The saved source editor also runs that source from its saved configuration; unsaved edits are ignored. A confirmation warns when a single source deactivates missing products. Results show per-source counts and errors, with a link to the runs log. Manual and cron imports share the same lock and execution path.
 
+The cron URL itself defaults to all active sources too. Append `&source=<ID>` (the source's `id_source`, shown in a new ID column on the source list) to run just that one source instead — including an inactive one, same as the admin panel. This is the way to give each scraped feed its own schedule/frequency instead of one combined daily run, for example:
+
+```cron
+0 3 * * * /usr/bin/curl --fail --silent --show-error 'PASTE_FULL_CRON_URL_HERE&source=3' >> /path/to/productimport-cron.log 2>&1
+```
+
 The endpoint disables PHP's execution time limit, but web-server/proxy timeouts still require deployment configuration for large catalogs. It takes a nonblocking local `flock` in the PrestaShop cache directory to prevent overlapping requests on this server. Concurrent imports across separate hosts without a shared lock filesystem are not serialized. Treat the copied URL as a secret. Inspect the JSON `runs[].status` even when the HTTP request succeeds; per-source failures do not produce a transport error.
 
 Catalog > Product Import runs shows the most recent 100 runs, source names, times, status, counts and error logs. An optional `id_source` URL parameter shows that source's latest 20. This page is read-only.

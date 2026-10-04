@@ -545,7 +545,8 @@ class AdminPiSourceController extends ModuleAdminController
             ]);
             $panel = $this->context->smarty->fetch(dirname(__DIR__, 3) . '/views/templates/admin/run_import.tpl');
         }
-        return '<div class="alert alert-info">Daily cron URL: <code>' . Tools::safeOutput($cronUrl) . '</code></div>' . $panel . $helper->generateList($sources, [
+        return '<div class="alert alert-info">Daily cron URL: <code>' . Tools::safeOutput($cronUrl) . '</code> &mdash; append <code>&amp;source=&lt;ID&gt;</code> to import one specific source instead of all active ones (see the ID column below).</div>' . $panel . $helper->generateList($sources, [
+            'id_source' => ['title' => $this->trans('ID')],
             'name' => ['title' => $this->trans('Name')],
             'technical_key' => ['title' => $this->trans('Technical key')],
             'active' => ['title' => $this->trans('Active'), 'type' => 'bool'],

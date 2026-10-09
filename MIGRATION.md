@@ -2,7 +2,7 @@
 
 The scrapers now live at the root instead of under `scraper-app/`. The existing
 repository history remains intact. The importer and `local-dev/` moved to
-https://github.com/ladismrkolj/prestashop-product-import with their relevant
+https://github.com/ladismrkolj/ps-dynamic-product-import with their relevant
 Git history preserved. Do not force-push the original repository.
 
 On existing deployments, update crontab, service WorkingDirectory and any

@@ -7,6 +7,13 @@ Each shop is its own **standalone, self-contained Scrapy project**. There is no
 shared framework and no cross-project imports — a change to one shop cannot
 break another, and each project pins its own dependencies.
 
+## PrestaShop importer
+
+The independently installable module and its Docker test store live in
+[prestashop-product-import](https://github.com/ladismrkolj/ps-dynamic-product-import).
+The interface is a JSON feed (one array of products per shop); neither repository
+needs the other checked out. See the feeding instructions below.
+
 ## Shops
 
 | Project | Shop | Platform |
@@ -329,7 +336,7 @@ unless you specifically want to avoid running nginx.
 ### 3. Trigger the PrestaShop import after the scrape
 
 The module already has a token-protected cron endpoint for exactly this (see
-`prestashop-product-import/README.md`'s "Background imports" section). Schedule
+[the importer README](https://github.com/ladismrkolj/ps-dynamic-product-import#background-imports)'s "Background imports" section). Schedule
 it comfortably after step 1 finishes — the nightly run's own log
 (`var/nightly-cron.log`) shows how long a full night's crawl actually takes,
 so set the gap accordingly:

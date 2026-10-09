@@ -1,4 +1,0 @@
-[
-  {"product_id":"WS-1","name":"Wetsuit Pro","price":199.9,"brand":"Nordic","breadcrumbs":[{"title":"Surf"},{"title":"Wetsuits"}],"images":["https://example.com/ws1.jpg"],"variants":[{"sku":"WS-1-S","size":"S","color":"Black","stock":3,"price":199.9},{"sku":"WS-1-M","size":"M","color":"Black","stock":5,"price":199.9}]},
-  {"product_id":"WS-2","name":"Boardbag","price":89,"brand":"Nordic","breadcrumbs":[{"title":"Surf"},{"title":"Bags"}],"images":["https://example.com/bag.jpg"],"variants":[{"sku":"WS-2-L","size":"L","color":"Blue","stock":2,"price":89}]}
-]
